@@ -1,0 +1,56 @@
+[
+  {
+    "_id": "1",
+    "title": "EduPulse AI",
+    "category": "Education",
+    "shortDescription": "Automated real-time grading and lesson adaptation metrics for remote classrooms.",
+    "targetAudience": "K-12 Schools & Instructors",
+    "estimatedBudget": "$15,000",
+    "image": "/i1.jpg"
+  },
+  {
+    "_id": "2",
+    "title": "MedTrack Node",
+    "category": "Health",
+    "shortDescription": "Decentralized medication tracking systems to combat international pharmaceutical forgery.",
+    "targetAudience": "Pharmacies & Logistics Crews",
+    "estimatedBudget": "$45,000",
+    "image": "/i2.jpg"
+  },
+  {
+    "_id": "3",
+    "title": "EcoFilter Core",
+    "category": "Tech",
+    "shortDescription": "IoT connected industrial water filter modules tracking live toxic overflow events.",
+    "targetAudience": "Manufacturing Plants",
+    "estimatedBudget": "$22,000",
+    "image": "/i3.jpg"
+  },
+  {
+    "_id": "4",
+    "title": "FinSentry Smart",
+    "category": "FinTech",
+    "shortDescription": "Predictive micro-loan monitoring frameworks preventing family debt correlation spikes.",
+    "targetAudience": "Underbanked Small Vendors",
+    "estimatedBudget": "$10,000",
+    "image": "/i4.jpg"
+  },
+  {
+    "_id": "5",
+    "title": "AgroVision Drone",
+    "category": "AI",
+    "shortDescription": "Computer vision analysis tracking early root rot from historical drone topography.",
+    "targetAudience": "Commercial Crop Farms",
+    "estimatedBudget": "$30,000",
+    "image": "/i5.jpg"
+  },
+  {
+    "_id": "6",
+    "title": "CivicRoute Engine",
+    "category": "Tech",
+    "shortDescription": "Crowdsourced city maintenance path planning reducing response times for municipal potholes.",
+    "targetAudience": "Local City Councils",
+    "estimatedBudget": "$12,000",
+    "image": "/i6.jpg"
+  }
+]

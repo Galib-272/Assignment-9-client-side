@@ -3,6 +3,7 @@ import "./globals.css";
 import { AppProvider } from "@/context/AppContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { Toaster } from "react-hot-toast";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,8 +16,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "IdeaVault",
-  description: "Startup Idea Sharing Platform",
+  title: "IdeaVault | Startup Validation Hub",
+  description:
+    "Share, evaluate, and scale global startup formulas collaboratively.",
 };
 
 export default function RootLayout({ children }) {
@@ -25,8 +27,9 @@ export default function RootLayout({ children }) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-white dark:bg-gray-900 transition-colors duration-300">
+      <body className="min-h-full flex flex-col bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
         <AppProvider>
+          <Toaster position="top-right" reverseOrder={false} />
           <Navbar />
           <main className="flex-grow">{children}</main>
           <Footer />

@@ -1,205 +1,164 @@
 "use client";
 
-import { useState, useContext } from "react";
+import { useContext, useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { AppContext } from "../context/AppContext";
+import { usePathname } from "next/navigation";
+import { AppContext } from "@/context/AppContext";
 
 export default function Navbar() {
-  const { user, theme, toggleTheme, logout } = useContext(AppContext);
-  const [isOpen, setIsOpen] = useState(false);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const { user, logout, theme, toggleTheme } = useContext(AppContext);
+  const pathname = usePathname();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const publicLinks = [
+    { name: "Home", path: "/" },
+    { name: "Ideas", path: "/ideas" },
+  ];
+
+  const privateLinks = [
+    { name: "Add Idea", path: "/add-idea" },
+    { name: "My Ideas", path: "/my-ideas" },
+    { name: "My Interactions", path: "/my-interactions" },
+  ];
+
+  const activeClass =
+    "text-indigo-600 dark:text-indigo-400 font-bold border-b-2 border-indigo-600 dark:border-indigo-400 pb-1";
+  const inactiveClass =
+    "text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors";
 
   return (
-    <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50 transition-colors duration-300 w-full">
+    <nav className="bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16 relative">
-          <div className="flex-shrink-0">
+        <div className="flex justify-between h-16 items-center relative">
+          
+          <div className="flex items-center">
             <Link
               href="/"
-              className="text-2xl font-bold text-indigo-600 dark:text-indigo-400"
+              className="text-xl font-black tracking-tight text-indigo-600 dark:text-indigo-400"
             >
               IdeaVault
             </Link>
           </div>
 
-          <div className="hidden md:flex absolute left-1/2 transform -translate-x-1/2 space-x-6">
-            <Link
-              href="/"
-              className="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium text-sm transition-colors"
-            >
-              Home
-            </Link>
-            <Link
-              href="/ideas"
-              className="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium text-sm transition-colors"
-            >
-              Ideas
-            </Link>
-            {user && (
-              <>
+          <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center space-x-6 text-sm font-medium">
+            {publicLinks.map((link) => (
+              <Link
+                key={link.path}
+                href={link.path}
+                className={pathname === link.path ? activeClass : inactiveClass}
+              >
+                {link.name}
+              </Link>
+            ))}
+            {user &&
+              privateLinks.map((link) => (
                 <Link
-                  href="/add-idea"
-                  className="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium text-sm transition-colors"
+                  key={link.path}
+                  href={link.path}
+                  className={pathname === link.path ? activeClass : inactiveClass}
                 >
-                  Add Idea
+                  {link.name}
                 </Link>
-                <Link
-                  href="/my-ideas"
-                  className="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium text-sm transition-colors"
-                >
-                  My Ideas
-                </Link>
-                <Link
-                  href="/my-interactions"
-                  className="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium text-sm transition-colors"
-                >
-                  My Interactions
-                </Link>
-              </>
-            )}
+              ))}
           </div>
 
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="flex items-center space-x-4">
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-xl transition-colors focus:outline-none"
+              className="p-2.5 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all focus:outline-none"
+              aria-label="Toggle Theme"
             >
-              {theme === "light" ? "🌙" : "☀️"}
+              {!mounted ? (
+                <div className="w-4 h-4" />
+              ) : theme === "dark" ? (
+                <svg className="w-4 h-4 fill-amber-400" viewBox="0 0 20 20">
+                  <path
+                    fillRule="evenodd"
+                    d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 14.036a1 1 0 011.414 0l.707.707a1 1 0 11-1.414 1.414l-.707-.707a1 1 0 010-1.414zm2.121-10.607a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM4 11a1 1 0 100-2H3a1 1 0 100 2h1z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              ) : (
+                <svg
+                  className="w-4 h-4 text-gray-700"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                </svg>
+              )}
             </button>
 
             {user ? (
-              <div className="relative">
+              <div className="relative" ref={dropdownRef}>
                 <button
-                  onClick={() => setIsProfileOpen(!isProfileOpen)}
-                  className="flex text-sm border-2 border-gray-200 dark:border-gray-700 rounded-full focus:outline-none focus:border-indigo-500"
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="w-9 h-9 rounded-full overflow-hidden border border-gray-200 dark:border-gray-800 focus:outline-none shadow-sm transition-all"
                 >
                   <img
-                    className="h-9 w-9 rounded-full object-cover"
-                    src={
-                      user.photoURL ||
-                      "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde"
-                    }
-                    alt="User profile"
+                    src={user.photoURL}
+                    alt={user.displayName}
+                    className="w-full h-full object-cover"
                   />
                 </button>
-                {isProfileOpen && (
-                  <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white dark:bg-gray-800 ring-1 ring-black/5 border border-gray-100 dark:border-gray-700">
+
+                {isDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-lg shadow-lg py-1 z-50">
+                    <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-800">
+                      <p className="text-xs font-semibold text-gray-900 dark:text-white truncate">
+                        {user.displayName}
+                      </p>
+                      <p className="text-[10px] text-gray-400 truncate mt-0.5">
+                        {user.email}
+                      </p>
+                    </div>
                     <Link
                       href="/profile"
-                      onClick={() => setIsProfileOpen(false)}
-                      className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      onClick={() => setIsDropdownOpen(false)}
+                      className="block px-4 py-2 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                     >
                       Profile Management
                     </Link>
                     <button
                       onClick={() => {
+                        setIsDropdownOpen(false);
                         logout();
-                        setIsProfileOpen(false);
                       }}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      className="block w-full text-left px-4 py-2 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 font-medium transition-colors"
                     >
-                      Sign out
+                      Disconnect Session
                     </button>
                   </div>
                 )}
               </div>
             ) : (
               <Link
-                href="/login"
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-lg text-sm font-medium shadow-sm transition-colors"
+                href={`/login?redirectTo=${pathname}`}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2 rounded-lg transition duration-200 shadow-sm"
               >
                 Login / Register
               </Link>
             )}
           </div>
 
-          <div className="flex items-center md:hidden space-x-2">
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-lg"
-            >
-              {theme === "light" ? "🌙" : "☀️"}
-            </button>
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="p-2 rounded-md text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none text-xl"
-            >
-              {isOpen ? "✕" : "☰"}
-            </button>
-          </div>
         </div>
       </div>
-
-      {isOpen && (
-        <div className="md:hidden bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 px-4 pt-2 pb-4 space-y-1 shadow-inner">
-          <Link
-            href="/"
-            onClick={() => setIsOpen(false)}
-            className="block text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 px-3 py-2 rounded-md text-base font-medium"
-          >
-            Home
-          </Link>
-          <Link
-            href="/ideas"
-            onClick={() => setIsOpen(false)}
-            className="block text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 px-3 py-2 rounded-md text-base font-medium"
-          >
-            Ideas
-          </Link>
-          {user && (
-            <>
-              <Link
-                href="/add-idea"
-                onClick={() => setIsOpen(false)}
-                className="block text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 px-3 py-2 rounded-md text-base font-medium"
-              >
-                Add Idea
-              </Link>
-              <Link
-                href="/my-ideas"
-                onClick={() => setIsOpen(false)}
-                className="block text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 px-3 py-2 rounded-md text-base font-medium"
-              >
-                My Ideas
-              </Link>
-              <Link
-                href="/my-interactions"
-                onClick={() => setIsOpen(false)}
-                className="block text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 px-3 py-2 rounded-md text-base font-medium"
-              >
-                My Interactions
-              </Link>
-              <Link
-                href="/profile"
-                onClick={() => setIsOpen(false)}
-                className="block text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 px-3 py-2 rounded-md text-base font-medium"
-              >
-                Profile Management
-              </Link>
-              <button
-                onClick={() => {
-                  logout();
-                  setIsOpen(false);
-                }}
-                className="block w-full text-left text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 px-3 py-2 rounded-md text-base font-medium"
-              >
-                Sign out
-              </button>
-            </>
-          )}
-          {!user && (
-            <div className="pt-2">
-              <Link
-                href="/login"
-                onClick={() => setIsOpen(false)}
-                className="block text-center bg-indigo-600 text-white px-4 py-2 rounded-md text-base font-medium shadow-sm"
-              >
-                Login / Register
-              </Link>
-            </div>
-          )}
-        </div>
-      )}
     </nav>
   );
 }
