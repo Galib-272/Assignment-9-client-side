@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { FaLightbulb, FaShieldHalved, FaUsersViewfinder } from "react-icons/fa6";
-import TrendingIdeas from "@/components/TrendingIdeas";
+import TrendingIdeas from "../components/TrendingIdeas";
 
 export default function Home() {
   useEffect(() => {
