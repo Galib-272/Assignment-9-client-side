@@ -18,8 +18,9 @@ export default function IdeasExplorePage() {
 
   useEffect(() => {
     const pageMountTime = Date.now();
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-    const url = `http://localhost:5000/ideas?search=${search}&category=${category}`;
+    const url = `${baseUrl}/ideas?search=${search}&category=${category}`;
 
     fetch(url)
       .then((res) => res.json())
