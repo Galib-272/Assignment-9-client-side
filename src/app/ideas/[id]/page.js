@@ -10,11 +10,11 @@ export default function IdeaDetailsPage({ params: paramsPromise }) {
   const params = use(paramsPromise);
   const { user, authLoading } = useContext(AppContext);
   const router = useRouter();
-  
+
   const [idea, setIdea] = useState(null);
   const [comments, setComments] = useState([]);
   const [initialLoading, setInitialLoading] = useState(true);
-  
+
   const [newComment, setNewComment] = useState("");
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editingText, setEditingText] = useState("");
@@ -43,7 +43,10 @@ export default function IdeaDetailsPage({ params: paramsPromise }) {
       .then(([ideaData, commentsData]) => {
         const networkElapsedTime = Date.now() - pageMountTime;
         const targetLoadingDelay = 1500;
-        const remainingDelayGate = Math.max(0, targetLoadingDelay - networkElapsedTime);
+        const remainingDelayGate = Math.max(
+          0,
+          targetLoadingDelay - networkElapsedTime,
+        );
 
         setTimeout(() => {
           setIdea(ideaData);
@@ -70,9 +73,15 @@ export default function IdeaDetailsPage({ params: paramsPromise }) {
       ideaId: params.id,
       text: newComment,
       userEmail: user.email,
-      userName: user.name || user.displayName || user.email.split("@")[0] || "Anonymous Peer",
-      authorImage: user.image || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde",
-      timestampRaw: new Date().toISOString()
+      userName:
+        user.name ||
+        user.displayName ||
+        user.email.split("@")[0] ||
+        "Anonymous Peer",
+      authorImage:
+        user.image ||
+        "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde",
+      timestampRaw: new Date().toISOString(),
     };
 
     fetch("http://localhost:5000/comments", {
@@ -90,8 +99,12 @@ export default function IdeaDetailsPage({ params: paramsPromise }) {
       .then((savedComment) => {
         const commentWithKey = {
           ...commentPayload,
-          _id: savedComment.insertedId || savedComment._id || Date.now().toString()
+          _id:
+            savedComment.insertedId ||
+            savedComment._id ||
+            Date.now().toString(),
         };
+
         setComments((prev) => [commentWithKey, ...prev]);
         setNewComment("");
         toast.success("Comment added to validation thread!");
@@ -114,7 +127,9 @@ export default function IdeaDetailsPage({ params: paramsPromise }) {
         return res.json();
       })
       .then(() => {
-        setComments((prev) => prev.filter((c) => (c._id || c.insertedId) !== commentId));
+        setComments((prev) =>
+          prev.filter((c) => (c._id || c.insertedId) !== commentId),
+        );
         toast.error("Comment deleted from repository.");
       })
       .catch((err) => {
@@ -145,8 +160,13 @@ export default function IdeaDetailsPage({ params: paramsPromise }) {
       })
       .then(() => {
         setComments((prev) =>
-          prev.map((c) => ((c._id || c.insertedId) === commentId ? { ...c, text: editingText } : c))
+          prev.map((c) =>
+            (c._id || c.insertedId) === commentId
+              ? { ...c, text: editingText }
+              : c,
+          ),
         );
+
         setEditingCommentId(null);
         setEditingText("");
         toast.success("Comment changes saved successfully!");
@@ -171,8 +191,14 @@ export default function IdeaDetailsPage({ params: paramsPromise }) {
   if (!idea || idea.message) {
     return (
       <div className="min-h-screen bg-white dark:bg-gray-900 flex flex-col items-center justify-center text-center p-6">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Concept Not Found</h2>
-        <Link href="/ideas" className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-2.5 rounded-md text-sm shadow-sm">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+          Concept Not Found
+        </h2>
+
+        <Link
+          href="/ideas"
+          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-2.5 rounded-md text-sm shadow-sm"
+        >
           Return to Explore
         </Link>
       </div>
@@ -182,15 +208,21 @@ export default function IdeaDetailsPage({ params: paramsPromise }) {
   return (
     <div className="bg-white dark:bg-gray-900 min-h-screen py-12 transition-colors duration-300">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        
         <div className="mb-8">
-          <Link href="/ideas" className="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:underline inline-flex items-center gap-1">
+          <Link
+            href="/ideas"
+            className="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:underline inline-flex items-center gap-1"
+          >
             ← Back to Explore Dashboard
           </Link>
         </div>
 
         <div className="w-full h-64 md:h-96 overflow-hidden rounded-2xl relative bg-gray-100 dark:bg-gray-800 border border-gray-200/60 dark:border-gray-700/60 mb-8 shadow-sm">
-          <img src={idea.image} alt={idea.title} className="w-full h-full object-cover" />
+          <img
+            src={idea.image}
+            alt={idea.title}
+            className="w-full h-full object-cover"
+          />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start mb-12">
@@ -199,13 +231,17 @@ export default function IdeaDetailsPage({ params: paramsPromise }) {
               <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 mb-3">
                 {idea.category}
               </span>
+
               <h1 className="text-3xl md:text-4xl font-black tracking-tight text-gray-900 dark:text-white">
                 {idea.title}
               </h1>
             </div>
 
             <div>
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3">Core Concept Formulation</h3>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3">
+                Core Concept Formulation
+              </h3>
+
               <p className="text-gray-600 dark:text-gray-300 font-light leading-relaxed text-base">
                 {idea.shortDescription}
               </p>
@@ -217,14 +253,26 @@ export default function IdeaDetailsPage({ params: paramsPromise }) {
               <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-900 dark:text-white mb-4 border-b border-gray-200/60 dark:border-gray-700/60 pb-2">
                 Validation Metrics
               </h3>
+
               <div className="space-y-4">
                 <div>
-                  <span className="block text-xs font-medium text-gray-400 uppercase tracking-wide">Target Demographics</span>
-                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 block mt-0.5">{idea.targetAudience}</span>
+                  <span className="block text-xs font-medium text-gray-400 uppercase tracking-wide">
+                    Target Demographics
+                  </span>
+
+                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 block mt-0.5">
+                    {idea.targetAudience}
+                  </span>
                 </div>
+
                 <div>
-                  <span className="block text-xs font-medium text-gray-400 uppercase tracking-wide">Estimated Launch Budget</span>
-                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 block mt-0.5">{idea.estimatedBudget}</span>
+                  <span className="block text-xs font-medium text-gray-400 uppercase tracking-wide">
+                    Estimated Launch Budget
+                  </span>
+
+                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 block mt-0.5">
+                    {idea.estimatedBudget}
+                  </span>
                 </div>
               </div>
             </div>
@@ -245,6 +293,7 @@ export default function IdeaDetailsPage({ params: paramsPromise }) {
               required
               className="w-full px-4 py-3 text-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             />
+
             <button
               type="submit"
               className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs px-5 py-2.5 rounded-lg transition-colors shadow-sm"
@@ -255,10 +304,14 @@ export default function IdeaDetailsPage({ params: paramsPromise }) {
 
           <div className="space-y-4">
             {comments.length === 0 ? (
-              <p className="text-sm text-gray-400 font-light italic">No validation notes recorded on this module yet.</p>
+              <p className="text-sm text-gray-400 font-light italic">
+                No validation notes recorded on this module yet.
+              </p>
             ) : (
               comments.map((comment, index) => {
-                const uniqueKey = comment._id || comment.insertedId || `fallback-key-${index}`;
+                const uniqueKey =
+                  comment._id || comment.insertedId || `fallback-key-${index}`;
+
                 return (
                   <div
                     key={uniqueKey}
@@ -266,11 +319,18 @@ export default function IdeaDetailsPage({ params: paramsPromise }) {
                   >
                     <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-gray-200 dark:bg-gray-700 border border-gray-200 dark:border-gray-700">
                       <img
-                        src={comment.authorImage || comment.authorPhoto || comment.userPhoto || comment.image || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde"}
+                        src={
+                          comment.authorImage ||
+                          comment.authorPhoto ||
+                          comment.userPhoto ||
+                          comment.image ||
+                          "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde"
+                        }
                         alt={comment.userName}
                         className="w-full h-full object-cover"
                         onError={(e) => {
-                          e.target.src = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde";
+                          e.target.src =
+                            "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde";
                         }}
                       />
                     </div>
@@ -281,11 +341,12 @@ export default function IdeaDetailsPage({ params: paramsPromise }) {
                           <span className="text-sm font-bold text-gray-900 dark:text-white">
                             {comment.userName}
                           </span>
+
                           <span className="text-[10px] text-gray-400 font-light">
                             {comment.userEmail}
                           </span>
                         </div>
-                        
+
                         {user && user.email === comment.userEmail && (
                           <div className="flex items-center space-x-3">
                             {editingCommentId !== uniqueKey && (
@@ -296,6 +357,7 @@ export default function IdeaDetailsPage({ params: paramsPromise }) {
                                 Edit
                               </button>
                             )}
+
                             <button
                               onClick={() => handleDeleteComment(uniqueKey)}
                               className="text-xs font-medium text-red-500 hover:underline"
@@ -315,6 +377,7 @@ export default function IdeaDetailsPage({ params: paramsPromise }) {
                               onChange={(e) => setEditingText(e.target.value)}
                               className="w-full px-3 py-1.5 text-sm rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
                             />
+
                             <div className="flex space-x-2">
                               <button
                                 onClick={() => handleSaveEdit(uniqueKey)}
@@ -322,6 +385,7 @@ export default function IdeaDetailsPage({ params: paramsPromise }) {
                               >
                                 Save
                               </button>
+
                               <button
                                 onClick={() => setEditingCommentId(null)}
                                 className="bg-gray-200 text-gray-700 text-[11px] font-bold px-3 py-1 rounded"
@@ -335,11 +399,14 @@ export default function IdeaDetailsPage({ params: paramsPromise }) {
                             <p className="text-sm text-gray-700 dark:text-gray-300 font-light leading-relaxed">
                               {comment.text}
                             </p>
+
                             {(comment.timestampRaw || comment.timestamp) && (
                               <p className="text-[10px] text-gray-400 dark:text-gray-500 font-light">
-                                {new Date(comment.timestampRaw || comment.timestamp).toLocaleString(undefined, {
+                                {new Date(
+                                  comment.timestampRaw || comment.timestamp,
+                                ).toLocaleString(undefined, {
                                   dateStyle: "short",
-                                  timeStyle: "short"
+                                  timeStyle: "short",
                                 })}
                               </p>
                             )}
@@ -353,7 +420,6 @@ export default function IdeaDetailsPage({ params: paramsPromise }) {
             )}
           </div>
         </div>
-
       </div>
     </div>
   );
