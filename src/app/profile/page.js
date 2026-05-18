@@ -24,8 +24,8 @@ function ProfileForm({ initialUser, onUserUpdate }) {
 
     try {
       const response = await authClient.updateUser({
-        name: name,
-        image: image,
+        name,
+        image,
       });
 
       if (response && response.error) {
@@ -39,7 +39,9 @@ function ProfileForm({ initialUser, onUserUpdate }) {
 
       toast.success("Profile tracking vectors updated successfully.");
     } catch (err) {
-      toast.error(err.message || "An exception occurred during synchronization.");
+      toast.error(
+        err.message || "An exception occurred during synchronization.",
+      );
     } finally {
       setIsUpdating(false);
     }
@@ -127,12 +129,14 @@ export default function ProfilePage() {
   return (
     <div className="bg-white dark:bg-gray-900 min-h-screen py-12 transition-colors duration-300">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-        
         <div className="bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-700/60 p-8 rounded-2xl shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-6">
             <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-indigo-500 shadow-md">
               <img
-                src={user.image || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde"}
+                src={
+                  user.image ||
+                  "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde"
+                }
                 alt={user.name}
                 className="w-full h-full object-cover"
               />
@@ -149,7 +153,7 @@ export default function ProfilePage() {
               </p>
             </div>
           </div>
-          
+
           <button
             onClick={handleDisconnect}
             className="px-4 py-2 border border-red-200 dark:border-red-900/60 hover:bg-red-50 dark:hover:bg-red-950/20 text-red-600 dark:text-red-400 text-xs font-semibold rounded-lg transition-colors"
@@ -160,16 +164,30 @@ export default function ProfilePage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           <div className="bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-700/60 p-6 rounded-2xl text-center">
-            <p className="text-3xl font-black text-gray-900 dark:text-white">{"3"}</p>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mt-1">{"Deposited Concepts"}</p>
+            <p className="text-3xl font-black text-gray-900 dark:text-white">
+              {"3"}
+            </p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mt-1">
+              {"Deposited Concepts"}
+            </p>
           </div>
+
           <div className="bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-700/60 p-6 rounded-2xl text-center">
-            <p className="text-3xl font-black text-gray-900 dark:text-white">{"14"}</p>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mt-1">{"Peer Validations Issued"}</p>
+            <p className="text-3xl font-black text-gray-900 dark:text-white">
+              {"14"}
+            </p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mt-1">
+              {"Peer Validations Issued"}
+            </p>
           </div>
+
           <div className="bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-700/60 p-6 rounded-2xl text-center">
-            <p className="text-3xl font-black text-gray-900 dark:text-white">{"A+"}</p>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mt-1">{"Ecosystem Credibility"}</p>
+            <p className="text-3xl font-black text-gray-900 dark:text-white">
+              {"A+"}
+            </p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mt-1">
+              {"Ecosystem Credibility"}
+            </p>
           </div>
         </div>
 
@@ -177,11 +195,11 @@ export default function ProfilePage() {
           <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-900 dark:text-white mb-6">
             {"Profile Management"}
           </h3>
-          
-          <ProfileForm 
-            key={user?.id || user?.email || "guest"} 
-            initialUser={user} 
-            onUserUpdate={setUser} 
+
+          <ProfileForm
+            key={user?.id || user?.email || "guest"}
+            initialUser={user}
+            onUserUpdate={setUser}
           />
         </div>
 
@@ -191,11 +209,13 @@ export default function ProfilePage() {
               {"Your Guarded Repository"}
             </h3>
           </div>
+
           <div className="p-8 text-center text-sm text-gray-400 font-light italic">
-            {"Dynamic tracking for personal startup records will synchronize seamlessly once MongoDB model routing channels open."}
+            {
+              "Dynamic tracking for personal startup records will synchronize seamlessly once MongoDB model routing channels open."
+            }
           </div>
         </div>
-
       </div>
     </div>
   );

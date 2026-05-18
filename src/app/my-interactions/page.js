@@ -66,23 +66,25 @@ export default function MyInteractionsPage() {
           My Interactions
         </h1>
         <p className="text-sm font-light text-gray-500 dark:text-gray-400 mb-8">
-          Review recent verification discussions and community feedback logging cycles you participated in.
+          Review recent verification discussions and community feedback logging
+          cycles you participated in.
         </p>
 
         <div className="bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-700/60 rounded-xl p-6">
           <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-6">
             Commented Ideas Tracked ({interactions.length})
           </h3>
-          
+
           {interactions.length === 0 ? (
             <p className="text-sm text-gray-400 font-light italic">
-              No validation notes recorded across any concept repository blocks yet.
+              No validation notes recorded across any concept repository blocks
+              yet.
             </p>
           ) : (
             <div className="space-y-6">
               {interactions.map((comment) => (
-                <div 
-                  key={comment._id} 
+                <div
+                  key={comment._id}
                   className="border-l-2 border-indigo-500 pl-4 space-y-1"
                 >
                   <Link
@@ -91,14 +93,19 @@ export default function MyInteractionsPage() {
                   >
                     {comment.ideaTitle || "Review Target Concept"}
                   </Link>
+
                   <p className="text-sm text-gray-600 dark:text-gray-300 font-light leading-relaxed">
                     “{comment.text}”
                   </p>
+
                   {(comment.timestampRaw || comment.timestamp) && (
                     <span className="block text-[10px] text-gray-400 font-mono pt-1">
-                      Timestamp Logged: {new Date(comment.timestampRaw || comment.timestamp).toLocaleString(undefined, {
+                      Timestamp Logged:{" "}
+                      {new Date(
+                        comment.timestampRaw || comment.timestamp,
+                      ).toLocaleString(undefined, {
                         dateStyle: "short",
-                        timeStyle: "short"
+                        timeStyle: "short",
                       })}
                     </span>
                   )}
