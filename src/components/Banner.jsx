@@ -7,19 +7,22 @@ export default function Banner() {
   const slides = [
     {
       title: "Empower Your Startup Journey",
-      description: "Securely store, refine, and co-create your disruptive business concepts in a shared space designed for true innovators.",
-      image: "/s1.png"
+      description:
+        "Securely store, refine, and co-create your disruptive business concepts in a shared space designed for true innovators.",
+      image: "/s1.png",
     },
     {
       title: "Validate Before You Build",
-      description: "Gather structural feedback and collaborate with domain experts to shape raw formulas into market-ready ventures.",
-      image: "/s2.png"
+      description:
+        "Gather structural feedback and collaborate with domain experts to shape raw formulas into market-ready ventures.",
+      image: "/s2.png",
     },
     {
       title: "Discover Next-Gen Innovations",
-      description: "Explore breaking ideas across AI, Tech, and Education. See what the ecosystem is working on and find your synergy.",
-      image: "/s3.png"
-    }
+      description:
+        "Explore breaking ideas across AI, Tech, and Education. See what the ecosystem is working on and find your synergy.",
+      image: "/s3.png",
+    },
   ];
 
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -28,6 +31,7 @@ export default function Banner() {
     const slideInterval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
     }, 5000);
+
     return () => clearInterval(slideInterval);
   }, [slides.length]);
 
@@ -45,7 +49,7 @@ export default function Banner() {
             alt={slide.title}
             className="absolute inset-0 w-full h-full object-cover"
           />
-          
+
           <div className="absolute inset-0 bg-black/60" />
 
           <div className="relative max-w-4xl px-6 text-center mx-auto">

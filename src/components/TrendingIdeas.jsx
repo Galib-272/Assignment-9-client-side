@@ -14,8 +14,11 @@ export default function TrendingIdeas() {
       .then((res) => res.json())
       .then((data) => {
         const networkElapsedTime = Date.now() - componentMountTime;
-        const targetLoadingDelay = 1500; 
-        const remainingDelayGate = Math.max(0, targetLoadingDelay - networkElapsedTime);
+        const targetLoadingDelay = 1500;
+        const remainingDelayGate = Math.max(
+          0,
+          targetLoadingDelay - networkElapsedTime,
+        );
 
         setTimeout(() => {
           if (Array.isArray(data)) {
@@ -27,8 +30,7 @@ export default function TrendingIdeas() {
           setLoading(false);
         }, remainingDelayGate);
       })
-      .catch((err) => {
-        console.error(err);
+      .catch(() => {
         setLoading(false);
       });
   }, []);
@@ -52,13 +54,16 @@ export default function TrendingIdeas() {
             Trending Startup Ideas
           </h2>
           <p className="max-w-2xl mx-auto text-base text-gray-500 dark:text-gray-400 font-light mt-3">
-            Explore the most validated concepts circulating through the ecosystem this week.
+            Explore the most validated concepts circulating through the
+            ecosystem this week.
           </p>
         </div>
 
         {ideas.length === 0 ? (
           <div className="text-center py-12 border border-dashed border-gray-200 dark:border-gray-800 rounded-xl">
-            <p className="text-sm text-gray-400">No active concept models deployed in database clusters yet.</p>
+            <p className="text-sm text-gray-400">
+              No active concept models deployed in database clusters yet.
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -91,11 +96,15 @@ export default function TrendingIdeas() {
                   <div className="border-t border-gray-200/60 dark:border-gray-700/60 pt-4 mt-auto">
                     <div className="flex flex-col gap-1 mb-5 text-xs text-gray-500 dark:text-gray-400 font-light">
                       <div>
-                        <span className="font-medium text-gray-700 dark:text-gray-200">Audience: </span>
+                        <span className="font-medium text-gray-700 dark:text-gray-200">
+                          Audience:{" "}
+                        </span>
                         {idea.targetAudience}
                       </div>
                       <div>
-                        <span className="font-medium text-gray-700 dark:text-gray-200">Est. Budget: </span>
+                        <span className="font-medium text-gray-700 dark:text-gray-200">
+                          Est. Budget:{" "}
+                        </span>
                         {idea.estimatedBudget}
                       </div>
                     </div>

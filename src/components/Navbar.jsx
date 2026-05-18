@@ -61,7 +61,6 @@ export default function Navbar() {
     <nav className="bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center relative">
-          
           <div className="flex items-center">
             <Link
               href="/"
@@ -86,7 +85,9 @@ export default function Navbar() {
                 <Link
                   key={link.path}
                   href={link.path}
-                  className={pathname === link.path ? activeClass : inactiveClass}
+                  className={
+                    pathname === link.path ? activeClass : inactiveClass
+                  }
                 >
                   {link.name}
                 </Link>
@@ -127,7 +128,10 @@ export default function Navbar() {
                   className="w-9 h-9 rounded-full overflow-hidden border border-gray-200 dark:border-gray-800 focus:outline-none shadow-sm transition-all"
                 >
                   <img
-                    src={user.image || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde"}
+                    src={
+                      user.image ||
+                      "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde"
+                    }
                     alt={user.name}
                     className="w-full h-full object-cover"
                   />
@@ -168,7 +172,6 @@ export default function Navbar() {
               </Link>
             )}
           </div>
-
         </div>
       </div>
     </nav>
