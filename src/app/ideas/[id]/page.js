@@ -8,98 +8,167 @@ import toast from "react-hot-toast";
 
 export default function IdeaDetailsPage({ params: paramsPromise }) {
   const params = use(paramsPromise);
-  const { user } = useContext(AppContext);
+  const { user, authLoading } = useContext(AppContext);
   const router = useRouter();
   
   const [idea, setIdea] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [comments, setComments] = useState([
-    {
-      id: "c1",
-      userName: "AJ",
-      userPhoto: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&q=80",
-      text: "This platform architecture could easily scale up. The proposed workflow makes clean logical sense.",
-      timestamp: "May 16, 2026"
-    },
-    {
-      id: "c2",
-      userName: "Sarah K.",
-      userPhoto: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&q=80",
-      text: "We need an integrated API bridge framework for data testing pipelines to verify conversion weights.",
-      timestamp: "May 17, 2026"
-    }
-  ]);
+  const [comments, setComments] = useState([]);
+  const [initialLoading, setInitialLoading] = useState(true);
   
   const [newComment, setNewComment] = useState("");
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editingText, setEditingText] = useState("");
 
   useEffect(() => {
-    fetch("/data.json")
-      .then((res) => res.json())
-      .then((data) => {
-        const foundIdea = data.find((item) => item._id === params.id);
-        setIdea(foundIdea || null);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error(err);
-        setLoading(false);
-      });
-  }, [params.id]);
-
-  useEffect(() => {
-    if (!loading && !user) {
+    if (!authLoading && !user) {
       router.push(`/login?redirectTo=/ideas/${params.id}`);
     }
-  }, [user, loading, router, params.id]);
+  }, [user, authLoading, router, params.id]);
+
+  useEffect(() => {
+    if (!params.id) return;
+
+    const pageMountTime = Date.now();
+
+    Promise.all([
+      fetch(`http://localhost:5000/ideas/${params.id}`).then((res) => {
+        if (!res.ok) throw new Error("Idea document not localized.");
+        return res.json();
+      }),
+      fetch(`http://localhost:5000/comments/${params.id}`).then((res) => {
+        if (!res.ok) return [];
+        return res.json();
+      }),
+    ])
+      .then(([ideaData, commentsData]) => {
+        const networkElapsedTime = Date.now() - pageMountTime;
+        const targetLoadingDelay = 1500;
+        const remainingDelayGate = Math.max(0, targetLoadingDelay - networkElapsedTime);
+
+        setTimeout(() => {
+          setIdea(ideaData);
+          setComments(Array.isArray(commentsData) ? commentsData : []);
+          setInitialLoading(false);
+        }, remainingDelayGate);
+      })
+      .catch((err) => {
+        console.error("Data handshake failure:", err);
+        setInitialLoading(false);
+      });
+  }, [params.id]);
 
   const handleAddComment = (e) => {
     e.preventDefault();
     if (!newComment.trim()) return;
 
-    const freshComment = {
-      id: `c_${Date.now()}`,
-      userName: user?.displayName || user?.email?.split("@")[0] || "Contributer",
-      userPhoto: user?.photoURL || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&q=80",
+    if (!user) {
+      toast.error("Please log in to participate in peer validation.");
+      return;
+    }
+
+    const commentPayload = {
+      ideaId: params.id,
       text: newComment,
-      timestamp: new Date().toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: 'numeric' })
+      userEmail: user.email,
+      userName: user.name || user.displayName || user.email.split("@")[0] || "Anonymous Peer",
+      authorImage: user.image || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde",
+      timestampRaw: new Date().toISOString()
     };
 
-    setComments((prev) => [freshComment, ...prev]);
-    setNewComment("");
-    toast.success("Comment added to validation thread!");
+    fetch("http://localhost:5000/comments", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("vault-token")}`,
+      },
+      body: JSON.stringify(commentPayload),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Unauthorized submission.");
+        return res.json();
+      })
+      .then((savedComment) => {
+        const commentWithKey = {
+          ...commentPayload,
+          _id: savedComment.insertedId || savedComment._id || Date.now().toString()
+        };
+        setComments((prev) => [commentWithKey, ...prev]);
+        setNewComment("");
+        toast.success("Comment added to validation thread!");
+      })
+      .catch((err) => {
+        console.error(err);
+        toast.error("Authentication expired or invalid payload.");
+      });
   };
 
   const handleDeleteComment = (commentId) => {
-    setComments((prev) => prev.filter((c) => c.id !== commentId));
-    toast.error("Comment deleted from repository.");
+    fetch(`http://localhost:5000/comments/${commentId}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("vault-token")}`,
+      },
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Forbidden operational sequence.");
+        return res.json();
+      })
+      .then(() => {
+        setComments((prev) => prev.filter((c) => (c._id || c.insertedId) !== commentId));
+        toast.error("Comment deleted from repository.");
+      })
+      .catch((err) => {
+        console.error(err);
+        toast.error("You can only delete your own comment records.");
+      });
   };
 
   const handleStartEdit = (comment) => {
-    setEditingCommentId(comment.id);
+    setEditingCommentId(comment._id || comment.insertedId);
     setEditingText(comment.text);
   };
 
   const handleSaveEdit = (commentId) => {
     if (!editingText.trim()) return;
-    setComments((prev) =>
-      prev.map((c) => (c.id === commentId ? { ...c, text: editingText } : c))
-    );
-    setEditingCommentId(null);
-    setEditingText("");
-    toast.success("Comment changes saved successfully!");
+
+    fetch(`http://localhost:5000/comments/${commentId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("vault-token")}`,
+      },
+      body: JSON.stringify({ text: editingText }),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Update failure.");
+        return res.json();
+      })
+      .then(() => {
+        setComments((prev) =>
+          prev.map((c) => ((c._id || c.insertedId) === commentId ? { ...c, text: editingText } : c))
+        );
+        setEditingCommentId(null);
+        setEditingText("");
+        toast.success("Comment changes saved successfully!");
+      })
+      .catch((err) => {
+        console.error(err);
+        toast.error("Unable to update comment resource parameters.");
+      });
   };
 
-  if (loading || !user) {
+  if (authLoading || initialLoading || !user) {
     return (
-      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center text-gray-500 dark:text-gray-400 font-light">
-        Loading concept parameters...
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex flex-col items-center justify-center space-y-4">
+        <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+        <p className="text-sm text-gray-400 font-light tracking-wide animate-pulse">
+          Querying database document vectors...
+        </p>
       </div>
     );
   }
 
-  if (!idea) {
+  if (!idea || idea.message) {
     return (
       <div className="min-h-screen bg-white dark:bg-gray-900 flex flex-col items-center justify-center text-center p-6">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Concept Not Found</h2>
@@ -138,7 +207,7 @@ export default function IdeaDetailsPage({ params: paramsPromise }) {
             <div>
               <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3">Core Concept Formulation</h3>
               <p className="text-gray-600 dark:text-gray-300 font-light leading-relaxed text-base">
-                {idea.shortDescription} This technical arrangement bridges data parameters across verified processing routes to generate high-fidelity tracking panels. Testing mechanics prioritize user action logging cycles prior to opening full database connection sockets.
+                {idea.shortDescription}
               </p>
             </div>
           </div>
@@ -172,7 +241,7 @@ export default function IdeaDetailsPage({ params: paramsPromise }) {
               rows="3"
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
-              placeholder="Add your comment..."
+              placeholder="Add your verification comment..."
               required
               className="w-full px-4 py-3 text-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             />
@@ -185,75 +254,103 @@ export default function IdeaDetailsPage({ params: paramsPromise }) {
           </form>
 
           <div className="space-y-4">
-            {comments.map((comment) => (
-              <div
-                key={comment.id}
-                className="flex gap-4 p-4 rounded-xl bg-gray-50/50 dark:bg-gray-800/20 border border-gray-100/70 dark:border-gray-800/50"
-              >
-                <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-gray-200">
-                  <img src={comment.userPhoto} alt={comment.userName} className="w-full h-full object-cover" />
-                </div>
+            {comments.length === 0 ? (
+              <p className="text-sm text-gray-400 font-light italic">No validation notes recorded on this module yet.</p>
+            ) : (
+              comments.map((comment, index) => {
+                const uniqueKey = comment._id || comment.insertedId || `fallback-key-${index}`;
+                return (
+                  <div
+                    key={uniqueKey}
+                    className="flex gap-4 p-4 rounded-xl bg-gray-50/50 dark:bg-gray-800/20 border border-gray-100/70 dark:border-gray-800/50"
+                  >
+                    <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-gray-200 dark:bg-gray-700 border border-gray-200 dark:border-gray-700">
+                      <img
+                        src={comment.authorImage || comment.authorPhoto || comment.userPhoto || comment.image || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde"}
+                        alt={comment.userName}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.src = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde";
+                        }}
+                      />
+                    </div>
 
-                <div className="flex-grow">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold text-gray-900 dark:text-white">
-                      {comment.userName}
-                    </span>
-                    <div className="flex items-center space-x-3">
-                      {editingCommentId !== comment.id && (
-                        <button
-                          onClick={() => handleStartEdit(comment)}
-                          className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
-                        >
-                          Edit
-                        </button>
-                      )}
-                      <button
-                        onClick={() => handleDeleteComment(comment.id)}
-                        className="text-xs font-medium text-red-500 hover:underline"
-                      >
-                        Delete
-                      </button>
+                    <div className="flex-grow">
+                      <div className="flex items-center justify-between">
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold text-gray-900 dark:text-white">
+                            {comment.userName}
+                          </span>
+                          <span className="text-[10px] text-gray-400 font-light">
+                            {comment.userEmail}
+                          </span>
+                        </div>
+                        
+                        {user && user.email === comment.userEmail && (
+                          <div className="flex items-center space-x-3">
+                            {editingCommentId !== uniqueKey && (
+                              <button
+                                onClick={() => handleStartEdit(comment)}
+                                className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
+                              >
+                                Edit
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleDeleteComment(uniqueKey)}
+                              className="text-xs font-medium text-red-500 hover:underline"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="mt-2">
+                        {editingCommentId === uniqueKey ? (
+                          <div className="mt-2 space-y-2">
+                            <input
+                              type="text"
+                              value={editingText}
+                              onChange={(e) => setEditingText(e.target.value)}
+                              className="w-full px-3 py-1.5 text-sm rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                            />
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={() => handleSaveEdit(uniqueKey)}
+                                className="bg-indigo-600 text-white text-[11px] font-bold px-3 py-1 rounded shadow-sm"
+                              >
+                                Save
+                              </button>
+                              <button
+                                onClick={() => setEditingCommentId(null)}
+                                className="bg-gray-200 text-gray-700 text-[11px] font-bold px-3 py-1 rounded"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="space-y-1">
+                            <p className="text-sm text-gray-700 dark:text-gray-300 font-light leading-relaxed">
+                              {comment.text}
+                            </p>
+                            {(comment.timestampRaw || comment.timestamp) && (
+                              <p className="text-[10px] text-gray-400 dark:text-gray-500 font-light">
+                                {new Date(comment.timestampRaw || comment.timestamp).toLocaleString(undefined, {
+                                  dateStyle: "short",
+                                  timeStyle: "short"
+                                })}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-
-                  <div className="mt-1">
-                    {editingCommentId === comment.id ? (
-                      <div className="mt-2 space-y-2">
-                        <input
-                          type="text"
-                          value={editingText}
-                          onChange={(e) => setEditingText(e.target.value)}
-                          className="w-full px-3 py-1.5 text-sm rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                        />
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => handleSaveEdit(comment.id)}
-                            className="bg-indigo-600 text-white text-[11px] font-bold px-3 py-1 rounded shadow-sm"
-                          >
-                            Save
-                          </button>
-                          <button
-                            onClick={() => setEditingCommentId(null)}
-                            className="bg-gray-200 text-gray-700 text-[11px] font-bold px-3 py-1 rounded"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="text-sm text-gray-700 dark:text-gray-300 font-light leading-relaxed">
-                        {comment.text}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="text-[11px] text-gray-400 font-light mt-1.5">
-                    {comment.timestamp}
-                  </div>
-                </div>
-              </div>
-            ))}
+                );
+              })
+            )}
           </div>
         </div>
 

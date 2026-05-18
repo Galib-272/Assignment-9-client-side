@@ -1,42 +1,140 @@
 "use client";
 
 import { createContext, useState, useEffect } from "react";
+import { authClient } from "@/lib/auth-client";
+import toast from "react-hot-toast";
 
-export const AppContext = createContext();
+export const AppContext = createContext(null);
 
-export const AppProvider = ({ children }) => {
+export default function AppProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [theme, setTheme] = useState("light");
-
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("theme") || "light";
-    setTheme(savedTheme);
-  }, []);
-
-  useEffect(() => {
-    const root = document.documentElement;
-    if (theme === "dark") {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
+  const [authLoading, setAuthLoading] = useState(true);
+  
+  const [theme, setTheme] = useState(() => {
+    if (typeof window !== "undefined") {
+      const savedTheme = localStorage.getItem("theme");
+      if (savedTheme) return savedTheme;
+      
+      const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      return systemPrefersDark ? "dark" : "light";
     }
-    localStorage.setItem("theme", theme);
+    return "dark";
+  });
+
+  useEffect(() => {
+    if (theme === "dark") {
+      document.documentElement.classList.add("dark");
+      document.body.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      document.body.classList.remove("dark");
+    }
+
+    async function synchronizeUserSession() {
+      try {
+        const sessionResponse = await authClient.getSession();
+        const sessionData = sessionResponse?.data;
+        
+        if (sessionData && sessionData.user) {
+          setUser(sessionData.user);
+
+          const jwtResponse = await fetch("http://localhost:5000/jwt", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: sessionData.user.email }),
+          });
+          
+          const tokenPayload = await jwtResponse.json();
+          if (tokenPayload && tokenPayload.token) {
+            localStorage.setItem("vault-token", tokenPayload.token);
+          }
+        } else {
+          setUser(null);
+          localStorage.removeItem("vault-token");
+        }
+      } catch (err) {
+        setUser(null);
+      } finally {
+        setAuthLoading(false);
+      }
+    }
+
+    synchronizeUserSession();
   }, [theme]);
 
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === "light" ? "dark" : "light"));
+  const loginUser = async (email, password) => {
+    setAuthLoading(true);
+    try {
+      const response = await authClient.signIn.email({ email, password });
+      const responseData = response?.data;
+      const responseError = response?.error;
+
+      if (responseError) throw new Error(responseError.message);
+      
+      if (responseData && responseData.user) {
+        setUser(responseData.user);
+        
+        const jwtResponse = await fetch("http://localhost:5000/jwt", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: responseData.user.email }),
+        });
+        const tokenPayload = await jwtResponse.json();
+        if (tokenPayload && tokenPayload.token) {
+          localStorage.setItem("vault-token", tokenPayload.token);
+        }
+        toast.success("Credential metrics verified. Access granted.");
+      }
+      return { success: true };
+    } catch (err) {
+      toast.error(err.message || "Authentication sequence rejected.");
+      return { success: false, error: err.message };
+    } finally {
+      setAuthLoading(false);
+    }
   };
 
-  const logout = () => {
-    setUser(null);
+  const logout = async () => {
+    setAuthLoading(true);
+    try {
+      await authClient.signOut();
+      setUser(null);
+      localStorage.removeItem("vault-token");
+      toast.error("Session terminated securely.");
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const toggleTheme = () => {
+    const targetTheme = theme === "dark" ? "light" : "dark";
+    setTheme(targetTheme);
+    localStorage.setItem("theme", targetTheme);
+
+    if (targetTheme === "dark") {
+      document.documentElement.classList.add("dark");
+      document.body.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      document.body.classList.remove("dark");
+    }
   };
 
   return (
-    <AppContext.Provider
-      value={{ user, setUser, theme, toggleTheme, loading, logout }}
+    <AppContext.Provider 
+      value={{ 
+        user, 
+        authLoading, 
+        setUser,
+        login: loginUser, 
+        logout, 
+        theme, 
+        toggleTheme 
+      }}
     >
       {children}
     </AppContext.Provider>
   );
-};
+}

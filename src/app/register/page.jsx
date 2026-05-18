@@ -1,37 +1,67 @@
 "use client";
 
-import { useState, useContext } from "react";
+import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AppContext } from "@/context/AppContext";
 import { authClient } from "@/lib/auth-client";
 import Link from "next/link";
 import toast from "react-hot-toast";
 
-export default function LoginPage() {
-  const { login } = useContext(AppContext);
+export default function RegisterPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
   const redirectTo = searchParams.get("redirectTo") || "/my-ideas";
 
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [image, setImage] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleFormSubmit = async (e) => {
+  const handleRegisterSubmit = async (e) => {
     e.preventDefault();
 
-    if (!email.trim() || !password.trim()) {
-      toast.error("Please provide complete credentials.");
+    if (!name.trim() || !email.trim() || !image.trim() || !password.trim()) {
+      toast.error("Please fill in all core initialization fields.");
+      return;
+    }
+
+    if (password.length < 6) {
+      toast.error("Password must be at least 6 characters long.");
+      return;
+    }
+
+    if (!/[A-Z]/.test(password)) {
+      toast.error("Password must include at least one uppercase letter.");
+      return;
+    }
+
+    if (!/[a-z]/.test(password)) {
+      toast.error("Password must include at least one lowercase letter.");
       return;
     }
 
     setIsSubmitting(true);
-    const result = await login(email, password);
-    setIsSubmitting(false);
 
-    if (result.success) {
+    try {
+      const response = await authClient.signUp.email({
+        email,
+        password,
+        name,
+        image,
+      });
+
+      if (response && response.error) {
+        toast.error(`Registration Rejected: ${response.error.message || "Unknown error"}`);
+        setIsSubmitting(false);
+        return;
+      }
+
+      toast.success("Account formulation registered into grid nodes!");
       router.push(redirectTo);
+    } catch (err) {
+      toast.error(err.message || "Registration sequence fault execution.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -52,18 +82,32 @@ export default function LoginPage() {
         
         <div className="text-center">
           <h2 className="text-3xl font-black tracking-tight text-gray-900 dark:text-white">
-            {"Access Workspace Matrix"}
+            {"Initialize Profile Vector"}
           </h2>
           <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 font-light">
-            {"Synchronize credentials to access premium business parameters."}
+            {"Register your credential parameters into the centralized ecosystem layout."}
           </p>
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleFormSubmit}>
+        <form className="mt-8 space-y-5" onSubmit={handleRegisterSubmit}>
           <div className="space-y-4">
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
-                {"Account Email Vector"}
+                {"Full Identity Name"}
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="e.g., Alex Mercer"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full px-4 py-2.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
+                {"Account Email Address"}
               </label>
               <input
                 type="email"
@@ -76,9 +120,23 @@ export default function LoginPage() {
             </div>
 
             <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
+                {"Photo URL"}
+              </label>
+              <input
+                type="url"
+                required
+                placeholder="https://example.com/photo.jpg"
+                value={image}
+                onChange={(e) => setImage(e.target.value)}
+                className="w-full px-4 py-2.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all"
+              />
+            </div>
+
+            <div>
               <div className="flex justify-between items-center mb-2">
                 <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                  {"Security Access Passcode"}
+                  {"Choose Access Passcode (Min 6 chars)"}
                 </label>
                 <span className="text-[11px] text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 cursor-pointer transition-colors font-medium">
                   {"Forgot Passcode Matrix?"}
@@ -95,13 +153,13 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <div>
+          <div className="pt-2">
             <button
               type="submit"
               disabled={isSubmitting}
               className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm py-3 rounded-xl transition duration-200 shadow-sm disabled:opacity-50"
             >
-              {isSubmitting ? "Authorizing Parameters..." : "Verify Credentials"}
+              {isSubmitting ? "Generating Node Profile..." : "Register Cluster Account"}
             </button>
           </div>
         </form>
@@ -145,9 +203,9 @@ export default function LoginPage() {
 
         <div className="text-center pt-2">
           <p className="text-xs text-gray-500 dark:text-gray-400 font-light">
-            {"New to the vault structure? "}
-            <Link href={`/register?redirectTo=${encodeURIComponent(redirectTo)}`} className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline">
-              {"Register Cluster Account"}
+            {"Already have an operational vector? "}
+            <Link href={`/login?redirectTo=${encodeURIComponent(redirectTo)}`} className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline">
+              {"Verify Existing Identity"}
             </Link>
           </p>
         </div>

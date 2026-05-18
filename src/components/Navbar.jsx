@@ -2,18 +2,27 @@
 
 import { useContext, useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { AppContext } from "@/context/AppContext";
 
 export default function Navbar() {
   const { user, logout, theme, toggleTheme } = useContext(AppContext);
   const pathname = usePathname();
+  const router = useRouter();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const dropdownRef = useRef(null);
 
   useEffect(() => {
-    setMounted(true);
+    let active = true;
+    requestAnimationFrame(() => {
+      if (active) {
+        setMounted(true);
+      }
+    });
+    return () => {
+      active = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -25,6 +34,12 @@ export default function Navbar() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const handleNavbarDisconnect = async () => {
+    setIsDropdownOpen(false);
+    await logout();
+    router.push("/");
+  };
 
   const publicLinks = [
     { name: "Home", path: "/" },
@@ -112,8 +127,8 @@ export default function Navbar() {
                   className="w-9 h-9 rounded-full overflow-hidden border border-gray-200 dark:border-gray-800 focus:outline-none shadow-sm transition-all"
                 >
                   <img
-                    src={user.photoURL}
-                    alt={user.displayName}
+                    src={user.image || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde"}
+                    alt={user.name}
                     className="w-full h-full object-cover"
                   />
                 </button>
@@ -122,7 +137,7 @@ export default function Navbar() {
                   <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-lg shadow-lg py-1 z-50">
                     <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-800">
                       <p className="text-xs font-semibold text-gray-900 dark:text-white truncate">
-                        {user.displayName}
+                        {user.name}
                       </p>
                       <p className="text-[10px] text-gray-400 truncate mt-0.5">
                         {user.email}
@@ -136,10 +151,7 @@ export default function Navbar() {
                       Profile Management
                     </Link>
                     <button
-                      onClick={() => {
-                        setIsDropdownOpen(false);
-                        logout();
-                      }}
+                      onClick={handleNavbarDisconnect}
                       className="block w-full text-left px-4 py-2 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 font-medium transition-colors"
                     >
                       Disconnect Session

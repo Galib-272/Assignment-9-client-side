@@ -1,135 +1,124 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useContext } from "react";
 import Link from "next/link";
+import { AppContext } from "@/context/AppContext";
 
-export default function IdeasPage() {
+export default function IdeasExplorePage() {
+  const { user, authLoading } = useContext(AppContext);
+
   const [ideas, setIdeas] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All");
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const dropdownRef = useRef(null);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("All");
 
   useEffect(() => {
-    fetch("/data.json")
+    const pageMountTime = Date.now();
+    const url = `http://localhost:5000/ideas?search=${search}&category=${category}`;
+
+    fetch(url)
       .then((res) => res.json())
-      .then((data) => setIdeas(data))
-      .catch((err) => console.error(err));
-  }, []);
+      .then((data) => {
+        if (initialLoading) {
+          const networkElapsedTime = Date.now() - pageMountTime;
+          const targetLoadingDelay = 1500;
+          const remainingDelayGate = Math.max(0, targetLoadingDelay - networkElapsedTime);
 
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsDropdownOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+          setTimeout(() => {
+            if (Array.isArray(data)) {
+              if (!user) {
+                const publicCoreCards = data.filter((item) => !item.authorEmail && !item.userEmail);
+                setIdeas(publicCoreCards);
+              } else {
+                setIdeas(data);
+              }
+            }
+            setInitialLoading(false);
+          }, remainingDelayGate);
+        } else {
+          if (Array.isArray(data)) {
+            if (!user) {
+              const publicCoreCards = data.filter((item) => !item.authorEmail && !item.userEmail);
+              setIdeas(publicCoreCards);
+            } else {
+              setIdeas(data);
+            }
+          }
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        setInitialLoading(false);
+      });
+  }, [search, category, user]);
 
-  const categories = ["All", "Education", "Health", "Tech", "FinTech", "AI"];
+  const categories = ["All", "Tech", "Health", "AI", "Education", "FinTech"];
 
-  const filteredIdeas = ideas.filter((idea) => {
-    const matchesCategory =
-      selectedCategory === "All" || idea.category === selectedCategory;
-    const matchesSearch =
-      idea.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      idea.shortDescription.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  if (authLoading || initialLoading) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex flex-col items-center justify-center space-y-4">
+        <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+        <p className="text-sm text-gray-400 font-light tracking-wide animate-pulse">
+          {"Synchronizing idea matrix pool..."}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white dark:bg-gray-900 min-h-screen py-12 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h1 className="text-3xl font-black tracking-tight text-gray-900 dark:text-white sm:text-4xl">
-            Explore Startup Ideas
-          </h1>
-          <p className="mt-3 max-w-2xl mx-auto text-base text-gray-500 dark:text-gray-400 font-light">
-            Search, filter, and discover community-driven startup formulas
-            waiting for validation.
-          </p>
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between mb-12 w-full relative z-40">
-          <div className="w-full sm:max-w-md">
-            <input
-              type="text"
-              placeholder="Search ideas by title or description..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm transition-all"
-            />
-          </div>
-
-          <div className="relative w-full sm:w-64" ref={dropdownRef}>
-            <button
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="w-full flex items-center justify-between px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-left transition-all"
-            >
-              <span>
-                Category:{" "}
-                <strong className="text-indigo-600 dark:text-indigo-400">
-                  {selectedCategory}
-                </strong>
-              </span>
-              <svg
-                className={`w-4 h-4 ml-2 transition-transform duration-200 ${isDropdownOpen ? "transform rotate-180" : ""}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
-            </button>
-
-            {isDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-full rounded-lg bg-white dark:bg-gray-800 shadow-lg border border-gray-100 dark:border-gray-700 py-1 origin-top-right focus:outline-none">
-                {categories.map((category) => (
-                  <button
-                    key={category}
-                    onClick={() => {
-                      setSelectedCategory(category);
-                      setIsDropdownOpen(false);
-                    }}
-                    className={`block w-full text-left px-4 py-2.5 text-sm transition-colors ${
-                      selectedCategory === category
-                        ? "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-semibold"
-                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/60"
-                    }`}
-                  >
-                    {category}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {filteredIdeas.length === 0 ? (
-          <div className="text-center py-16 border border-dashed border-gray-200 dark:border-gray-700 rounded-2xl">
-            <p className="text-gray-500 dark:text-gray-400 font-light text-lg">
-              No matching startup concepts found. Try adapting your filters or
-              keywords.
+        
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-12">
+          <div>
+            <h1 className="text-3xl font-black tracking-tight text-gray-900 dark:text-white sm:text-4xl">
+              {"Explore Concept Formulations"}
+            </h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400 font-light mt-1">
+              {user 
+                ? "Reviewing complete cluster including user-deposited startup models."
+                : "Displaying public baseline configurations. Log in to unlock premium peer-deposited ideas."}
             </p>
           </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 items-center">
+            <input
+              type="text"
+              placeholder="Search concepts..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="px-4 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-950/40 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 w-full sm:w-64"
+            />
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="px-4 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-950/40 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            >
+              {categories.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {ideas.length === 0 ? (
+          <p className="text-sm text-gray-400 font-light italic text-center py-12">
+            {"No configurations localized matching current filtering criteria."}
+          </p>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 relative z-10">
-            {filteredIdeas.map((idea) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            {ideas.map((idea) => (
               <div
                 key={idea._id}
-                className="flex flex-col justify-between bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/60 rounded-xl overflow-hidden transition-all duration-300 hover:shadow-md hover:-translate-y-1 h-full"
+                className="flex flex-col justify-between bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-700/60 rounded-xl overflow-hidden transition-all duration-300 hover:shadow-md hover:-translate-y-1 h-full"
               >
                 <div className="w-full h-48 overflow-hidden relative bg-gray-200 dark:bg-gray-800">
-                  <img
-                    src={idea.image}
-                    alt={idea.title}
-                    className="w-full h-full object-cover"
+                  <img 
+                    src={idea.image || idea.imageURL || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe"} 
+                    alt={idea.title} 
+                    className="w-full h-full object-cover" 
                   />
                 </div>
 
@@ -149,24 +138,20 @@ export default function IdeasPage() {
                   <div className="border-t border-gray-200/60 dark:border-gray-700/60 pt-4 mt-auto">
                     <div className="flex flex-col gap-1 mb-5 text-xs text-gray-500 dark:text-gray-400 font-light">
                       <div>
-                        <span className="font-medium text-gray-700 dark:text-gray-200">
-                          Audience:{" "}
-                        </span>
-                        {idea.targetAudience}
+                        <span className="font-medium text-gray-700 dark:text-gray-200">{"Audience: "}</span>
+                        {idea.targetAudience || idea.targetDemographics}
                       </div>
                       <div>
-                        <span className="font-medium text-gray-700 dark:text-gray-200">
-                          Est. Budget:{" "}
-                        </span>
-                        {idea.estimatedBudget}
+                        <span className="font-medium text-gray-700 dark:text-gray-200">{"Est. Budget: "}</span>
+                        {idea.estimatedBudget || idea.estimatedLaunchBudget}
                       </div>
                     </div>
 
                     <Link
                       href={`/ideas/${idea._id}`}
-                      className="block text-center w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm py-2.5 px-4 rounded-md transition duration-200 shadow-sm"
+                      className="block text-center w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm py-2.5 rounded-md transition duration-200 shadow-sm"
                     >
-                      View Details
+                      {"View Details"}
                     </Link>
                   </div>
                 </div>
@@ -174,6 +159,7 @@ export default function IdeasPage() {
             ))}
           </div>
         )}
+
       </div>
     </div>
   );
