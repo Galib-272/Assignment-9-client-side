@@ -1,155 +1,73 @@
 "use client";
 
 import { createContext, useState, useEffect } from "react";
-import { authClient } from "@/lib/auth-client";
 import toast from "react-hot-toast";
 
-export const AppContext = createContext(null);
+export const AppContext = createContext();
 
-export default function AppProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [authLoading, setAuthLoading] = useState(true);
-
-  const [theme, setTheme] = useState(() => {
+export function AppProvider({ children }) {
+  const [user, setUser] = useState(() => {
     if (typeof window !== "undefined") {
-      const savedTheme = localStorage.getItem("theme");
-      if (savedTheme) return savedTheme;
-
-      const systemPrefersDark = window.matchMedia(
-        "(prefers-color-scheme: dark)",
-      ).matches;
-
-      return systemPrefersDark ? "dark" : "light";
+      const storedUser = localStorage.getItem("vault-user");
+      const storedToken = localStorage.getItem("vault-token");
+      if (storedUser && storedToken) {
+        return JSON.parse(storedUser);
+      }
     }
-    return "dark";
+    return null;
   });
 
+  const [authLoading, setAuthLoading] = useState(false);
+
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
   useEffect(() => {
-    if (theme === "dark") {
-      document.documentElement.classList.add("dark");
-      document.body.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      document.body.classList.remove("dark");
-    }
+    queueMicrotask(() => {
+      setAuthLoading(false);
+    });
+  }, []);
 
-    async function synchronizeUserSession() {
-      try {
-        const sessionResponse = await authClient.getSession();
-        const sessionData = sessionResponse?.data;
-
-        if (sessionData?.user) {
-          setUser(sessionData.user);
-
-          const baseUrl =
-            process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-          const jwtResponse = await fetch(`${baseUrl}/jwt`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email: sessionData.user.email }),
-          });
-
-          const tokenPayload = await jwtResponse.json();
-
-          if (tokenPayload?.token) {
-            localStorage.setItem("vault-token", tokenPayload.token);
-          }
-        } else {
-          setUser(null);
-          localStorage.removeItem("vault-token");
-        }
-      } catch (err) {
-        setUser(null);
-      } finally {
-        setAuthLoading(false);
-      }
-    }
-
-    synchronizeUserSession();
-  }, [theme]);
-
-  const loginUser = async (email, password) => {
-    setAuthLoading(true);
-
+  const login = async (email, password) => {
     try {
-      const response = await authClient.signIn.email({ email, password });
+      const response = await fetch(`${baseUrl}/jwt`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-      if (response?.error) {
-        throw new Error(response.error.message);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Authentication sequence rejected.");
       }
 
-      const userData = response?.data?.user;
-
-      if (userData) {
-        setUser(userData);
-
-        const baseUrl =
-          process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-        const jwtResponse = await fetch(`${baseUrl}/jwt`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: userData.email }),
-        });
-
-        const tokenPayload = await jwtResponse.json();
-
-        if (tokenPayload?.token) {
-          localStorage.setItem("vault-token", tokenPayload.token);
-        }
-
-        toast.success("Credential metrics verified. Access granted.");
+      if (data.token) {
+        const profileUser = { email };
+        localStorage.setItem("vault-token", data.token);
+        localStorage.setItem("vault-user", JSON.stringify(profileUser));
+        setUser(profileUser);
+        toast.success("Welcome back to the Vault workspace!");
+        return { success: true };
       }
 
-      return { success: true };
+      return { success: false };
     } catch (err) {
       toast.error(err.message || "Authentication sequence rejected.");
-      return { success: false, error: err.message };
-    } finally {
-      setAuthLoading(false);
+      return { success: false };
     }
   };
 
-  const logout = async () => {
-    setAuthLoading(true);
-
-    try {
-      await authClient.signOut();
-      setUser(null);
-      localStorage.removeItem("vault-token");
-      toast.error("Session terminated securely.");
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setAuthLoading(false);
-    }
-  };
-
-  const toggleTheme = () => {
-    const targetTheme = theme === "dark" ? "light" : "dark";
-    setTheme(targetTheme);
-    localStorage.setItem("theme", targetTheme);
-
-    if (targetTheme === "dark") {
-      document.documentElement.classList.add("dark");
-      document.body.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      document.body.classList.remove("dark");
-    }
+  const logout = () => {
+    localStorage.removeItem("vault-token");
+    localStorage.removeItem("vault-user");
+    setUser(null);
+    toast.success("Session disconnected successfully.");
   };
 
   return (
-    <AppContext.Provider
-      value={{
-        user,
-        authLoading,
-        setUser,
-        login: loginUser,
-        logout,
-        theme,
-        toggleTheme,
-      }}
-    >
+    <AppContext.Provider value={{ user, authLoading, login, logout }}>
       {children}
     </AppContext.Provider>
   );
