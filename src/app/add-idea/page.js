@@ -34,10 +34,10 @@ export default function AddIdeaPage() {
     e.preventDefault();
 
     if (
-      !title.trim() || 
-      !image.trim() || 
-      !shortDescription.trim() || 
-      !detailedDescription.trim() || 
+      !title.trim() ||
+      !image.trim() ||
+      !shortDescription.trim() ||
+      !detailedDescription.trim() ||
       !targetAudience.trim() ||
       !problemStatement.trim() ||
       !proposedSolution.trim()
@@ -52,7 +52,10 @@ export default function AddIdeaPage() {
       image,
       shortDescription,
       description: detailedDescription,
-      tags: tags.split(",").map(t => t.trim()).filter(Boolean),
+      tags: tags
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean),
       estimatedBudget: estimatedBudget || "N/A",
       targetAudience,
       problemStatement,
@@ -60,7 +63,8 @@ export default function AddIdeaPage() {
       authorEmail: user?.email,
     };
 
-    const token = localStorage.getItem("vault-token") || localStorage.getItem("token");
+    const token =
+      localStorage.getItem("vault-token") || localStorage.getItem("token");
 
     fetch("http://localhost:5000/ideas", {
       method: "POST",
@@ -101,13 +105,14 @@ export default function AddIdeaPage() {
     <div className="bg-white dark:bg-gray-900 min-h-screen py-12 transition-colors duration-300">
       <div className="max-w-3xl mx-auto px-4 sm:px-6">
         <div className="bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-700/60 p-8 rounded-2xl shadow-sm">
-          
           <div className="mb-8">
             <h1 className="text-3xl font-black tracking-tight text-gray-900 dark:text-white">
               {"Deposit Startup Formula"}
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400 font-light mt-1">
-              {"Log your architectural concept parameters directly into the guarded community matrix."}
+              {
+                "Log your architectural concept parameters directly into the guarded community matrix."
+              }
             </p>
           </div>
 
@@ -266,7 +271,6 @@ export default function AddIdeaPage() {
               </button>
             </div>
           </form>
-
         </div>
       </div>
     </div>
