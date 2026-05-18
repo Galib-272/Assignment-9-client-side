@@ -13,6 +13,10 @@ export default function IdeasExplorePage() {
   const [category, setCategory] = useState("All");
 
   useEffect(() => {
+    document.title = "IdeaVault | Explore Ideas";
+  }, []);
+
+  useEffect(() => {
     const pageMountTime = Date.now();
     const url = `http://localhost:5000/ideas?search=${search}&category=${category}`;
 
@@ -92,7 +96,7 @@ export default function IdeasExplorePage() {
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="px-4 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-950/40 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              className="px-4 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-955/40 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
             >
               {categories.map((cat) => (
                 <option key={cat} value={cat}>

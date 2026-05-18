@@ -21,6 +21,10 @@ export default function AddIdeaPage() {
   const [proposedSolution, setProposedSolution] = useState("");
 
   useEffect(() => {
+    document.title = "IdeaVault | Add Concept";
+  }, []);
+
+  useEffect(() => {
     if (!authLoading && !user) {
       router.push("/login?redirectTo=/add-idea");
     }

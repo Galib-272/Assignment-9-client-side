@@ -13,6 +13,12 @@ export default function MyIdeasPage() {
   const [ideas, setIdeas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [purgingIdeaId, setPurgingIdeaId] = useState(null);
+  const [editingIdea, setEditingIdea] = useState(null);
+  const [pendingUpdateData, setPendingUpdateData] = useState(null);
+
+  useEffect(() => {
+    document.title = "IdeaVault | My Ideas";
+  }, []);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -74,6 +80,40 @@ export default function MyIdeasPage() {
       });
   };
 
+  const handleFormSubmitTrigger = (e) => {
+    e.preventDefault();
+    if (!editingIdea) return;
+    setPendingUpdateData({ ...editingIdea });
+  };
+
+  const commitUpdateExecution = () => {
+    if (!pendingUpdateData) return;
+
+    fetch(`http://localhost:5000/ideas/${pendingUpdateData._id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("vault-token")}`,
+      },
+      body: JSON.stringify(pendingUpdateData),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to overwrite record nodes.");
+        return res.json();
+      })
+      .then(() => {
+        setIdeas((prev) => prev.map((item) => item._id === pendingUpdateData._id ? pendingUpdateData : item));
+        setPendingUpdateData(null);
+        setEditingIdea(null);
+        toast.success("Startup concept configurations updated successfully!");
+      })
+      .catch((err) => {
+        console.error(err);
+        setPendingUpdateData(null);
+        toast.error(err.message || "Matrix update synchronization failure.");
+      });
+  };
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center text-gray-400 text-sm font-light">
@@ -100,7 +140,7 @@ export default function MyIdeasPage() {
         {ideas.length === 0 ? (
           <div className="text-center py-24 border border-dashed border-gray-200 dark:border-gray-800 rounded-2xl bg-gray-50/30 dark:bg-gray-950/20 max-w-xl mx-auto">
             <p className="text-sm text-gray-400 font-light italic mb-4">
-              You haven't uploaded any startup concept files into the system vault grid yet.
+              You haven{"'"}t uploaded any startup concept files into the system vault grid yet.
             </p>
             <Link
               href="/add-idea"
@@ -149,18 +189,24 @@ export default function MyIdeasPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-3 gap-2">
                       <Link
                         href={`/ideas/${idea._id}`}
-                        className="text-center bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-2.5 rounded-md transition duration-200 shadow-sm"
+                        className="text-center bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[11px] py-2.5 rounded-md transition duration-200 shadow-sm flex items-center justify-center"
                       >
-                        View Details
+                        View
                       </Link>
                       <button
-                        onClick={() => setPurgingIdeaId(idea._id)}
-                        className="text-center bg-red-600 hover:bg-red-700 text-white font-bold text-xs py-2.5 rounded-md transition duration-200 shadow-sm"
+                        onClick={() => setEditingIdea({ ...idea })}
+                        className="text-center bg-amber-600 hover:bg-amber-700 text-white font-bold text-[11px] py-2.5 rounded-md transition duration-200 shadow-sm"
                       >
-                        Purge Code
+                        Update
+                      </button>
+                      <button
+                        onClick={() => setPurgingIdeaId(idea._id)}
+                        className="text-center bg-red-600 hover:bg-red-700 text-white font-bold text-[11px] py-2.5 rounded-md transition duration-200 shadow-sm"
+                      >
+                        Purge
                       </button>
                     </div>
                   </div>
@@ -172,8 +218,104 @@ export default function MyIdeasPage() {
 
       </div>
 
+      {editingIdea && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl max-w-lg w-full p-6 shadow-xl space-y-4 my-8 max-h-[90vh] overflow-y-auto">
+            <h3 className="text-xl font-black tracking-tight text-gray-900 dark:text-white">
+              Update Formulation Data
+            </h3>
+            <form onSubmit={handleFormSubmitTrigger} className="space-y-4">
+              <div>
+                <label className="block text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-1">Concept Title</label>
+                <input
+                  type="text"
+                  required
+                  value={editingIdea.title || ""}
+                  onChange={(e) => setEditingIdea({ ...editingIdea, title: e.target.value })}
+                  className="w-full px-3 py-2 text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-1">Short Description</label>
+                <input
+                  type="text"
+                  required
+                  value={editingIdea.shortDescription || ""}
+                  onChange={(e) => setEditingIdea({ ...editingIdea, shortDescription: e.target.value })}
+                  className="w-full px-3 py-2 text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-1">Target Audience</label>
+                <input
+                  type="text"
+                  required
+                  value={editingIdea.targetAudience || ""}
+                  onChange={(e) => setEditingIdea({ ...editingIdea, targetAudience: e.target.value })}
+                  className="w-full px-3 py-2 text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-1">Estimated Budget</label>
+                <input
+                  type="text"
+                  required
+                  value={editingIdea.estimatedBudget || ""}
+                  onChange={(e) => setEditingIdea({ ...editingIdea, estimatedBudget: e.target.value })}
+                  className="w-full px-3 py-2 text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none"
+                />
+              </div>
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingIdea(null)}
+                  className="px-4 py-2 text-xs font-bold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 shadow-sm"
+                >
+                  Save Configuration
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {pendingUpdateData && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl max-w-sm w-full p-6 shadow-xl space-y-4">
+            <div className="space-y-2">
+              <h3 className="text-lg font-black tracking-tight text-gray-900 dark:text-white">
+                Confirm Data Overwrite?
+              </h3>
+              <p className="text-xs font-light text-gray-500 dark:text-gray-400 leading-relaxed">
+                Are you sure you want to save these modifications? This will overwrite the existing formulation parameters inside the database cluster nodes.
+              </p>
+            </div>
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                onClick={() => setPendingUpdateData(null)}
+                className="px-4 py-2 text-xs font-bold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={commitUpdateExecution}
+                className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 shadow-sm transition-colors"
+              >
+                Confirm Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {purgingIdeaId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl max-w-sm w-full p-6 shadow-xl space-y-4">
             <div className="space-y-2">
               <h3 className="text-lg font-black tracking-tight text-gray-900 dark:text-white">
