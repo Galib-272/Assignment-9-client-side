@@ -9,13 +9,16 @@ export const AppContext = createContext(null);
 export default function AppProvider({ children }) {
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
-  
+
   const [theme, setTheme] = useState(() => {
     if (typeof window !== "undefined") {
       const savedTheme = localStorage.getItem("theme");
       if (savedTheme) return savedTheme;
-      
-      const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+      const systemPrefersDark = window.matchMedia(
+        "(prefers-color-scheme: dark)",
+      ).matches;
+
       return systemPrefersDark ? "dark" : "light";
     }
     return "dark";
@@ -34,8 +37,8 @@ export default function AppProvider({ children }) {
       try {
         const sessionResponse = await authClient.getSession();
         const sessionData = sessionResponse?.data;
-        
-        if (sessionData && sessionData.user) {
+
+        if (sessionData?.user) {
           setUser(sessionData.user);
 
           const jwtResponse = await fetch("http://localhost:5000/jwt", {
@@ -43,9 +46,10 @@ export default function AppProvider({ children }) {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email: sessionData.user.email }),
           });
-          
+
           const tokenPayload = await jwtResponse.json();
-          if (tokenPayload && tokenPayload.token) {
+
+          if (tokenPayload?.token) {
             localStorage.setItem("vault-token", tokenPayload.token);
           }
         } else {
@@ -64,27 +68,34 @@ export default function AppProvider({ children }) {
 
   const loginUser = async (email, password) => {
     setAuthLoading(true);
+
     try {
       const response = await authClient.signIn.email({ email, password });
-      const responseData = response?.data;
-      const responseError = response?.error;
 
-      if (responseError) throw new Error(responseError.message);
-      
-      if (responseData && responseData.user) {
-        setUser(responseData.user);
-        
+      if (response?.error) {
+        throw new Error(response.error.message);
+      }
+
+      const userData = response?.data?.user;
+
+      if (userData) {
+        setUser(userData);
+
         const jwtResponse = await fetch("http://localhost:5000/jwt", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: responseData.user.email }),
+          body: JSON.stringify({ email: userData.email }),
         });
+
         const tokenPayload = await jwtResponse.json();
-        if (tokenPayload && tokenPayload.token) {
+
+        if (tokenPayload?.token) {
           localStorage.setItem("vault-token", tokenPayload.token);
         }
+
         toast.success("Credential metrics verified. Access granted.");
       }
+
       return { success: true };
     } catch (err) {
       toast.error(err.message || "Authentication sequence rejected.");
@@ -96,6 +107,7 @@ export default function AppProvider({ children }) {
 
   const logout = async () => {
     setAuthLoading(true);
+
     try {
       await authClient.signOut();
       setUser(null);
@@ -123,15 +135,15 @@ export default function AppProvider({ children }) {
   };
 
   return (
-    <AppContext.Provider 
-      value={{ 
-        user, 
-        authLoading, 
+    <AppContext.Provider
+      value={{
+        user,
+        authLoading,
         setUser,
-        login: loginUser, 
-        logout, 
-        theme, 
-        toggleTheme 
+        login: loginUser,
+        logout,
+        theme,
+        toggleTheme,
       }}
     >
       {children}
