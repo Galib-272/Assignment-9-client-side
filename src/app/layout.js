@@ -1,26 +1,15 @@
 import "./globals.css";
-import { Toaster } from "react-hot-toast";
-import AppProvider from "@/context/AppContext";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 
 export const metadata = {
-  title: "IdeaVault - Startup Validation Ecosystem",
-  description: "Secure, decentralized workspace layout to deposit, trace, and validate breaking business formulations.",
+  title: "IdeaVault",
+  description: "Secure Concept Ledgers",
 };
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className="h-full">
-      <body className="min-h-full flex flex-col bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 antialiased transition-colors duration-300">
-        <AppProvider>
-          <Toaster position="top-right" reverseOrder={false} />
-          <Navbar />
-          <main className="flex-grow">
-            {children}
-          </main>
-          <Footer />
-        </AppProvider>
+    <html lang="en">
+      <body className="antialiased bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col justify-between">
+        <main className="flex-grow">{children}</main>
       </body>
     </html>
   );

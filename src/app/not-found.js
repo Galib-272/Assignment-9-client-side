@@ -1,15 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
 
 export default function NotFound() {
-  useEffect(() => {
-    document.title = "IdeaVault | 404 Not Found";
-  }, []);
-
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900 flex flex-col items-center justify-center px-4 transition-colors duration-300">
+    <div className="min-h-screen bg-white dark:bg-gray-900 flex flex-col items-center justify-center px-4">
       <div className="text-center max-w-md w-full space-y-6">
         <h1 className="text-9xl font-black text-indigo-600 dark:text-indigo-400 tracking-tight">
           404
