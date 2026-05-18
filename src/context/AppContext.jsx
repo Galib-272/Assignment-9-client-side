@@ -41,7 +41,9 @@ export default function AppProvider({ children }) {
         if (sessionData?.user) {
           setUser(sessionData.user);
 
-          const jwtResponse = await fetch("http://localhost:5000/jwt", {
+          const baseUrl =
+            process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+          const jwtResponse = await fetch(`${baseUrl}/jwt`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email: sessionData.user.email }),
@@ -81,7 +83,9 @@ export default function AppProvider({ children }) {
       if (userData) {
         setUser(userData);
 
-        const jwtResponse = await fetch("http://localhost:5000/jwt", {
+        const baseUrl =
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+        const jwtResponse = await fetch(`${baseUrl}/jwt`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: userData.email }),

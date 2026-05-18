@@ -19,11 +19,13 @@ export default function IdeaDetailsPage({ params: paramsPromise }) {
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editingText, setEditingText] = useState("");
 
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
   useEffect(() => {
     if (!authLoading && !user) {
       router.push(`/login?redirectTo=/ideas/${params.id}`);
     }
-  }, [user, authLoading, router, params.id]);
+  }, [user, authLoading, router, params.id, baseUrl]);
 
   useEffect(() => {
     if (!params.id) return;
@@ -31,18 +33,21 @@ export default function IdeaDetailsPage({ params: paramsPromise }) {
     const pageMountTime = Date.now();
 
     Promise.all([
-      fetch(`http://localhost:5000/ideas/${params.id}`).then((res) => {
+      fetch(`${baseUrl}/ideas/${params.id}`).then((res) => {
         if (!res.ok) throw new Error("Idea document not localized.");
         return res.json();
       }),
-      fetch(`http://localhost:5000/comments/${params.id}`).then((res) => {
+      fetch(`${baseUrl}/comments/${params.id}`).then((res) => {
         if (!res.ok) return [];
         return res.json();
       }),
     ])
       .then(([ideaData, commentsData]) => {
+        if (ideaData && ideaData.title) {
+          document.title = `IdeaVault | ${ideaData.title}`;
+        }
         const networkElapsedTime = Date.now() - pageMountTime;
-        const targetLoadingDelay = 1500;
+        const targetLoadingDelay = 1200;
         const remainingDelayGate = Math.max(
           0,
           targetLoadingDelay - networkElapsedTime,
@@ -50,41 +55,28 @@ export default function IdeaDetailsPage({ params: paramsPromise }) {
 
         setTimeout(() => {
           setIdea(ideaData);
-          setComments(Array.isArray(commentsData) ? commentsData : []);
+          setComments(commentsData);
           setInitialLoading(false);
         }, remainingDelayGate);
       })
       .catch((err) => {
-        console.error("Data handshake failure:", err);
+        console.error(err);
         setInitialLoading(false);
       });
-  }, [params.id]);
+  }, [params.id, baseUrl]);
 
-  const handleAddComment = (e) => {
+  const handleCreateComment = (e) => {
     e.preventDefault();
-    if (!newComment.trim()) return;
-
-    if (!user) {
-      toast.error("Please log in to participate in peer validation.");
-      return;
-    }
+    if (!newComment.trim() || !user) return;
 
     const commentPayload = {
       ideaId: params.id,
-      text: newComment,
+      text: newComment.trim(),
       userEmail: user.email,
-      userName:
-        user.name ||
-        user.displayName ||
-        user.email.split("@")[0] ||
-        "Anonymous Peer",
-      authorImage:
-        user.image ||
-        "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde",
-      timestampRaw: new Date().toISOString(),
+      userName: user.name || "Anonymous Expert",
     };
 
-    fetch("http://localhost:5000/comments", {
+    fetch(`${baseUrl}/comments`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -93,299 +85,259 @@ export default function IdeaDetailsPage({ params: paramsPromise }) {
       body: JSON.stringify(commentPayload),
     })
       .then((res) => {
-        if (!res.ok) throw new Error("Unauthorized submission.");
+        if (!res.ok) throw new Error("Submission pipeline rejected.");
         return res.json();
       })
-      .then((savedComment) => {
-        const commentWithKey = {
+      .then((insertedRecord) => {
+        const freshCommentObject = {
+          _id: insertedRecord.insertedId,
           ...commentPayload,
-          _id:
-            savedComment.insertedId ||
-            savedComment._id ||
-            Date.now().toString(),
+          timestampRaw: new Date().toISOString(),
         };
-
-        setComments((prev) => [commentWithKey, ...prev]);
+        setComments((prev) => [freshCommentObject, ...prev]);
         setNewComment("");
-        toast.success("Comment added to validation thread!");
+        toast.success("Validation comment committed.");
       })
-      .catch((err) => {
-        console.error(err);
-        toast.error("Authentication expired or invalid payload.");
-      });
+      .catch((err) => toast.error(err.message));
+  };
+
+  const handleUpdateComment = (commentId) => {
+    if (!editingText.trim()) return;
+
+    fetch(`${baseUrl}/comments/${commentId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("vault-token")}`,
+      },
+      body: JSON.stringify({ text: editingText.trim() }),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Modification parameters invalid.");
+        return res.json();
+      })
+      .then(() => {
+        setComments((prev) =>
+          prev.map((c) =>
+            c._id === commentId
+              ? {
+                  ...c,
+                  text: editingText.trim(),
+                  timestampRaw: new Date().toISOString(),
+                }
+              : c,
+          ),
+        );
+        setEditingCommentId(null);
+        setEditingText("");
+        toast.success("Discussion point updated successfully.");
+      })
+      .catch((err) => toast.error(err.message));
   };
 
   const handleDeleteComment = (commentId) => {
-    fetch(`http://localhost:5000/comments/${commentId}`, {
+    fetch(`${baseUrl}/comments/${commentId}`, {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${localStorage.getItem("vault-token")}`,
       },
     })
       .then((res) => {
-        if (!res.ok) throw new Error("Forbidden operational sequence.");
+        if (!res.ok) throw new Error("Deletion processing fault.");
         return res.json();
       })
       .then(() => {
-        setComments((prev) =>
-          prev.filter((c) => (c._id || c.insertedId) !== commentId),
-        );
-        toast.error("Comment deleted from repository.");
+        setComments((prev) => prev.filter((c) => c._id !== commentId));
+        toast.error("Discussion point detached from repository nodes.");
       })
-      .catch((err) => {
-        console.error(err);
-        toast.error("You can only delete your own comment records.");
-      });
+      .catch((err) => toast.error(err.message));
   };
 
-  const handleStartEdit = (comment) => {
-    setEditingCommentId(comment._id || comment.insertedId);
-    setEditingText(comment.text);
-  };
-
-  const handleSaveEdit = (commentId) => {
-    if (!editingText.trim()) return;
-
-    fetch(`http://localhost:5000/comments/${commentId}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("vault-token")}`,
-      },
-      body: JSON.stringify({ text: editingText }),
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error("Update failure.");
-        return res.json();
-      })
-      .then(() => {
-        setComments((prev) =>
-          prev.map((c) =>
-            (c._id || c.insertedId) === commentId
-              ? { ...c, text: editingText }
-              : c,
-          ),
-        );
-
-        setEditingCommentId(null);
-        setEditingText("");
-        toast.success("Comment changes saved successfully!");
-      })
-      .catch((err) => {
-        console.error(err);
-        toast.error("Unable to update comment resource parameters.");
-      });
-  };
-
-  if (authLoading || initialLoading || !user) {
+  if (authLoading || initialLoading) {
     return (
       <div className="min-h-screen bg-white dark:bg-gray-900 flex flex-col items-center justify-center space-y-4">
         <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
         <p className="text-sm text-gray-400 font-light tracking-wide animate-pulse">
-          Querying database document vectors...
+          Parsing detailed formula metrics...
         </p>
       </div>
     );
   }
 
-  if (!idea || idea.message) {
-    return (
-      <div className="min-h-screen bg-white dark:bg-gray-900 flex flex-col items-center justify-center text-center p-6">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-          Concept Not Found
-        </h2>
-
-        <Link
-          href="/ideas"
-          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-2.5 rounded-md text-sm shadow-sm"
-        >
-          Return to Explore
-        </Link>
-      </div>
-    );
-  }
+  if (!user || !idea) return null;
 
   return (
     <div className="bg-white dark:bg-gray-900 min-h-screen py-12 transition-colors duration-300">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <Link
-            href="/ideas"
-            className="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:underline inline-flex items-center gap-1"
-          >
-            ← Back to Explore Dashboard
-          </Link>
-        </div>
-
-        <div className="w-full h-64 md:h-96 overflow-hidden rounded-2xl relative bg-gray-100 dark:bg-gray-800 border border-gray-200/60 dark:border-gray-700/60 mb-8 shadow-sm">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+        <div className="rounded-2xl overflow-hidden h-[380px] relative bg-gray-100 border border-gray-100 dark:border-gray-800 shadow-sm">
           <img
-            src={idea.image}
+            src={
+              idea.image ||
+              idea.imageURL ||
+              "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe"
+            }
             alt={idea.title}
             className="w-full h-full object-cover"
           />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 p-8 text-white space-y-3">
+            <span className="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-semibold bg-indigo-600 text-white shadow-sm">
+              {idea.category}
+            </span>
+            <h1 className="text-3xl font-black tracking-tight sm:text-4xl">
+              {idea.title}
+            </h1>
+            <p className="text-gray-200 text-sm font-light max-w-2xl leading-relaxed">
+              {idea.shortDescription}
+            </p>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start mb-12">
-          <div className="lg:col-span-2 space-y-6">
-            <div className="border-b border-gray-100 dark:border-gray-800 pb-6">
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 mb-3">
-                {idea.category}
-              </span>
-
-              <h1 className="text-3xl md:text-4xl font-black tracking-tight text-gray-900 dark:text-white">
-                {idea.title}
-              </h1>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+          <div className="md:col-span-2 space-y-8">
+            <div className="bg-gray-50 dark:bg-gray-800/30 border border-gray-100 dark:border-gray-800/60 p-6 rounded-xl space-y-3">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400">
+                Core Problem Statement
+              </h3>
+              <p className="text-sm text-gray-700 dark:text-gray-300 font-light leading-relaxed">
+                {idea.problemStatement}
+              </p>
             </div>
 
-            <div>
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3">
-                Core Concept Formulation
+            <div className="bg-gray-50 dark:bg-gray-800/30 border border-gray-100 dark:border-gray-800/60 p-6 rounded-xl space-y-3">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400">
+                Proposed Solution Layout
               </h3>
+              <p className="text-sm text-gray-700 dark:text-gray-300 font-light leading-relaxed">
+                {idea.proposedSolution}
+              </p>
+            </div>
 
-              <p className="text-gray-600 dark:text-gray-300 font-light leading-relaxed text-base">
-                {idea.shortDescription}
+            <div className="space-y-3">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400">
+                Detailed Technical Specifications
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-300 font-light leading-relaxed whitespace-pre-line">
+                {idea.description}
               </p>
             </div>
           </div>
 
-          <div className="space-y-6">
-            <div className="bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-700/60 rounded-xl p-6 shadow-sm">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-900 dark:text-white mb-4 border-b border-gray-200/60 dark:border-gray-700/60 pb-2">
-                Validation Metrics
-              </h3>
+          <div className="bg-gray-50 dark:bg-gray-800/30 border border-gray-100 dark:border-gray-800/60 rounded-xl p-6 space-y-6">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-gray-900 dark:text-white border-b border-gray-200/60 dark:border-gray-700/60 pb-3">
+              Validation Vectors
+            </h3>
 
-              <div className="space-y-4">
-                <div>
-                  <span className="block text-xs font-medium text-gray-400 uppercase tracking-wide">
-                    Target Demographics
-                  </span>
+            <div className="space-y-1">
+              <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                Target Profile
+              </span>
+              <span className="text-sm font-medium text-gray-900 dark:text-white">
+                {idea.targetAudience}
+              </span>
+            </div>
 
-                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 block mt-0.5">
-                    {idea.targetAudience}
-                  </span>
-                </div>
+            <div className="space-y-1">
+              <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                Estimated Budget Allocation
+              </span>
+              <span className="text-sm font-medium text-gray-900 dark:text-white">
+                {idea.estimatedBudget}
+              </span>
+            </div>
 
-                <div>
-                  <span className="block text-xs font-medium text-gray-400 uppercase tracking-wide">
-                    Estimated Launch Budget
-                  </span>
-
-                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 block mt-0.5">
-                    {idea.estimatedBudget}
-                  </span>
+            {idea.tags && idea.tags.length > 0 && (
+              <div className="space-y-2">
+                <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                  Ecosystem Tags
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {idea.tags.map((tag, i) => (
+                    <span
+                      key={i}
+                      className="text-[10px] font-mono px-2 py-0.5 rounded bg-gray-200/60 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
+                    >
+                      #{tag}
+                    </span>
+                  ))}
                 </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-900 border border-gray-200/80 dark:border-gray-800 p-6 rounded-2xl shadow-sm max-w-3xl">
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
-            Comments ({comments.length})
-          </h3>
+        <div className="border-t border-gray-200 dark:border-gray-800 pt-10 space-y-8">
+          <div>
+            <h2 className="text-xl font-black text-gray-900 dark:text-white tracking-tight">
+              Community Verification Board
+            </h2>
+            <p className="text-xs font-light text-gray-400 mt-0.5">
+              Provide peer validation indicators or log adjustment metrics.
+            </p>
+          </div>
 
-          <form onSubmit={handleAddComment} className="mb-8 space-y-3">
-            <textarea
-              rows="3"
+          <form
+            onSubmit={handleCreateComment}
+            className="flex gap-3 items-start"
+          >
+            <input
+              type="text"
+              required
+              placeholder="Provide constructive formulation feedback..."
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
-              placeholder="Add your verification comment..."
-              required
-              className="w-full px-4 py-3 text-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              className="flex-grow px-4 py-2.5 text-xs rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-950/40 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
             />
-
             <button
               type="submit"
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs px-5 py-2.5 rounded-lg transition-colors shadow-sm"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-5 py-2.5 rounded-lg transition shadow-sm h-full flex-shrink-0"
             >
-              Post Comment
+              Log Feedback
             </button>
           </form>
 
-          <div className="space-y-4">
+          <div className="space-y-4 pt-2">
             {comments.length === 0 ? (
-              <p className="text-sm text-gray-400 font-light italic">
-                No validation notes recorded on this module yet.
+              <p className="text-xs text-gray-400 font-light italic">
+                No optimization discussion metrics logged against this
+                repository node yet.
               </p>
             ) : (
-              comments.map((comment, index) => {
-                const uniqueKey =
-                  comment._id || comment.insertedId || `fallback-key-${index}`;
-
+              comments.map((comment) => {
+                const isOwner =
+                  user &&
+                  user.email.toLowerCase() === comment.userEmail.toLowerCase();
                 return (
                   <div
-                    key={uniqueKey}
-                    className="flex gap-4 p-4 rounded-xl bg-gray-50/50 dark:bg-gray-800/20 border border-gray-100/70 dark:border-gray-800/50"
+                    key={comment._id}
+                    className="bg-gray-50 dark:bg-gray-800/30 border border-gray-100 dark:border-gray-800/40 p-4 rounded-xl"
                   >
-                    <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-gray-200 dark:bg-gray-700 border border-gray-200 dark:border-gray-700">
-                      <img
-                        src={
-                          comment.authorImage ||
-                          comment.authorPhoto ||
-                          comment.userPhoto ||
-                          comment.image ||
-                          "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde"
-                        }
-                        alt={comment.userName}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.target.src =
-                            "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde";
-                        }}
-                      />
-                    </div>
-
-                    <div className="flex-grow">
-                      <div className="flex items-center justify-between">
-                        <div className="flex flex-col">
-                          <span className="text-sm font-bold text-gray-900 dark:text-white">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="space-y-1 flex-grow">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-gray-900 dark:text-white">
                             {comment.userName}
                           </span>
-
-                          <span className="text-[10px] text-gray-400 font-light">
+                          <span className="text-[10px] font-mono text-gray-400 bg-gray-200/50 dark:bg-gray-800 px-1.5 py-0.2 rounded">
                             {comment.userEmail}
                           </span>
                         </div>
 
-                        {user && user.email === comment.userEmail && (
-                          <div className="flex items-center space-x-3">
-                            {editingCommentId !== uniqueKey && (
-                              <button
-                                onClick={() => handleStartEdit(comment)}
-                                className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
-                              >
-                                Edit
-                              </button>
-                            )}
-
-                            <button
-                              onClick={() => handleDeleteComment(uniqueKey)}
-                              className="text-xs font-medium text-red-500 hover:underline"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="mt-2">
-                        {editingCommentId === uniqueKey ? (
-                          <div className="mt-2 space-y-2">
+                        {editingCommentId === comment._id ? (
+                          <div className="space-y-2 pt-1">
                             <input
                               type="text"
                               value={editingText}
                               onChange={(e) => setEditingText(e.target.value)}
-                              className="w-full px-3 py-1.5 text-sm rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                              className="w-full px-3 py-1.5 text-xs rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none"
                             />
-
-                            <div className="flex space-x-2">
+                            <div className="flex gap-2">
                               <button
-                                onClick={() => handleSaveEdit(uniqueKey)}
+                                onClick={() => handleUpdateComment(comment._id)}
                                 className="bg-indigo-600 text-white text-[11px] font-bold px-3 py-1 rounded shadow-sm"
                               >
-                                Save
+                                Commit
                               </button>
-
                               <button
                                 onClick={() => setEditingCommentId(null)}
                                 className="bg-gray-200 text-gray-700 text-[11px] font-bold px-3 py-1 rounded"
@@ -399,7 +351,6 @@ export default function IdeaDetailsPage({ params: paramsPromise }) {
                             <p className="text-sm text-gray-700 dark:text-gray-300 font-light leading-relaxed">
                               {comment.text}
                             </p>
-
                             {(comment.timestampRaw || comment.timestamp) && (
                               <p className="text-[10px] text-gray-400 dark:text-gray-500 font-light">
                                 {new Date(
@@ -413,6 +364,26 @@ export default function IdeaDetailsPage({ params: paramsPromise }) {
                           </div>
                         )}
                       </div>
+
+                      {isOwner && !editingCommentId && (
+                        <div className="flex gap-2 flex-shrink-0 pt-0.5">
+                          <button
+                            onClick={() => {
+                              setEditingCommentId(comment._id);
+                              setEditingText(comment.text);
+                            }}
+                            className="text-[10px] font-bold text-amber-600 hover:underline"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteComment(comment._id)}
+                            className="text-[10px] font-bold text-red-600 hover:underline"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );

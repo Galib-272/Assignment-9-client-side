@@ -9,8 +9,9 @@ export default function TrendingIdeas() {
 
   useEffect(() => {
     const componentMountTime = Date.now();
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-    fetch("http://localhost:5000/ideas")
+    fetch(`${baseUrl}/ideas`)
       .then((res) => res.json())
       .then((data) => {
         const networkElapsedTime = Date.now() - componentMountTime;
