@@ -6,6 +6,10 @@ import { FaLightbulb, FaShieldHalved, FaUsersViewfinder } from "react-icons/fa6"
 import TrendingIdeas from "@/components/TrendingIdeas";
 
 export default function Home() {
+  useEffect(() => {
+    document.title = "IdeaVault | Home";
+  }, []);
+
   return (
     <div className="w-full bg-white dark:bg-gray-900 transition-colors duration-300">
       <Banner />

@@ -10,6 +10,10 @@ export default function MyInteractionsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    document.title = "IdeaVault | My Interactions";
+  }, []);
+
+  useEffect(() => {
     if (authLoading || !user) return;
 
     fetch(`http://localhost:5000/my-comments?email=${user.email}`, {
