@@ -19,13 +19,38 @@ export function AppProvider({ children }) {
 
   const [authLoading, setAuthLoading] = useState(false);
 
+  const [theme, setTheme] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("theme") || "light";
+    }
+    return "light";
+  });
+
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
   useEffect(() => {
     queueMicrotask(() => {
       setAuthLoading(false);
     });
-  }, []);
+
+    if (theme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [theme]);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    setTheme(nextTheme);
+    localStorage.setItem("theme", nextTheme);
+
+    if (nextTheme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  };
 
   const login = async (email, password) => {
     try {
@@ -67,7 +92,9 @@ export function AppProvider({ children }) {
   };
 
   return (
-    <AppContext.Provider value={{ user, authLoading, login, logout }}>
+    <AppContext.Provider
+      value={{ user, authLoading, login, logout, theme, toggleTheme }}
+    >
       {children}
     </AppContext.Provider>
   );
