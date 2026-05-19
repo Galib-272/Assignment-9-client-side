@@ -1,5 +1,6 @@
 import { createAuthClient } from "better-auth/client";
 
 export const authClient = createAuthClient({
-  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000"
+  // Dynamically uses the exact domain name currently loading in the address bar
+  baseURL: typeof window !== "undefined" ? window.location.origin : "http://localhost:3000"
 });
