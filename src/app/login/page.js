@@ -65,9 +65,23 @@ function LoginContent() {
       return;
     }
     setIsSubmitting(true);
-    const result = await login(email, password);
-    setIsSubmitting(false);
-    if (result.success) router.push(redirectTo);
+    
+    // ✅ ADDED TOAST LOGIC FOR EMAIL/PASSWORD LOGIN
+    try {
+      const result = await login(email, password);
+      setIsSubmitting(false);
+      
+      if (result && result.success) {
+        toast.success("Welcome back! Identity authorized.");
+        router.push(redirectTo);
+      } else {
+        toast.error(result?.message || "Invalid credentials. Access denied.");
+      }
+    } catch (err) {
+      setIsSubmitting(false);
+      console.error("Login component submission error:", err);
+      toast.error("An error occurred during authentication.");
+    }
   };
 
   // ✅ Save intended destination, then land on /auth/callback to sync session

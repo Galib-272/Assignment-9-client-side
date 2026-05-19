@@ -82,14 +82,15 @@ export function AppProvider({ children }) {
 
         localStorage.setItem("vault-user", JSON.stringify(verifiedUser));
         setUser(verifiedUser);
-        toast.success("Welcome back to the Vault workspace!");
+        
+        // ✅ REMOVED THE DUPLICATE TOAST FROM HERE SO IT ONLY FIRES FROM THE LOGIN FORM COMPONENT
         return { success: true };
       }
 
-      return { success: false };
+      return { success: false, message: data.message };
     } catch (err) {
-      toast.error(err.message || "Authentication sequence rejected.");
-      return { success: false };
+      // Return error message back to the component form to be cleanly toasted
+      return { success: false, message: err.message || "Authentication sequence rejected." };
     }
   };
 
