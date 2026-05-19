@@ -107,7 +107,21 @@ function LoginContent() {
           </div>
 
           <div>
-            <label className={labelClass}>Password</label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400">
+                Password
+              </label>
+              <Link
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  toast.error("Password recovery vault is currently offline.");
+                }}
+                className="text-xs font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 transition"
+              >
+                Forgot password?
+              </Link>
+            </div>
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
@@ -158,7 +172,9 @@ function LoginContent() {
           ) : (
             <GoogleIcon />
           )}
-          <span>{googleLoading ? "Redirecting..." : "Continue with Google"}</span>
+          <span>
+            {googleLoading ? "Redirecting..." : "Continue with Google"}
+          </span>
         </button>
 
         <p className="text-center text-xs text-gray-500 dark:text-gray-400 font-light">
@@ -192,10 +208,22 @@ export default function LoginPage() {
 function GoogleIcon() {
   return (
     <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24">
-      <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.53-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-8.82z" />
-      <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.11 0-5.74-2.11-6.68-4.96H1.21v3.15C3.18 21.88 7.31 24 12 24z" />
-      <path fill="#FBBC05" d="M5.32 14.24A7.16 7.16 0 0 1 4.93 12c0-.79.13-1.57.39-2.31V6.54H1.21A11.93 11.93 0 0 0 0 12c0 2.12.55 4.12 1.52 5.87l3.8-3.63z" />
-      <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.18 2.12 1.21 5.87l3.8 3.15c.94-2.85 3.57-4.96 6.99-4.96z" />
+      <path
+        fill="#4285F4"
+        d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.53-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-8.82z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.11 0-5.74-2.11-6.68-4.96H1.21v3.15C3.18 21.88 7.31 24 12 24z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M5.32 14.24A7.16 7.16 0 0 1 4.93 12c0-.79.13-1.57.39-2.31V6.54H1.21A11.93 11.93 0 0 0 0 12c0 2.12.55 4.12 1.52 5.87l3.8-3.63z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.18 2.12 1.21 5.87l3.8 3.15c.94-2.85 3.57-4.96 6.99-4.96z"
+      />
     </svg>
   );
 }

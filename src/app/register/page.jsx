@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import Link from "next/link";
@@ -42,7 +42,35 @@ const labelClass =
 function RegisterContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirectTo") || "/my-ideas";
+
+  // ✅ FIXED ROUTING: Dynamically compute previous route history context fallbacks
+  const [redirectTo, setRedirectTo] = useState("/");
+
+  useEffect(() => {
+    const queryParamTarget = searchParams.get("redirectTo");
+    if (queryParamTarget) {
+      setRedirectTo(queryParamTarget);
+      return;
+    }
+
+    if (typeof window !== "undefined" && document.referrer) {
+      try {
+        const referrerUrl = new URL(document.referrer);
+        // Ensure we only redirect internally within our own application domain
+        if (referrerUrl.origin === window.location.origin) {
+          // If the previous page was login or register, don't loop back to them
+          if (
+            !referrerUrl.pathname.includes("/login") &&
+            !referrerUrl.pathname.includes("/register")
+          ) {
+            setRedirectTo(referrerUrl.pathname + referrerUrl.search);
+          }
+        }
+      } catch (e) {
+        console.error("Referrer parsing error:", e);
+      }
+    }
+  }, [searchParams]);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -80,7 +108,11 @@ function RegisterContent() {
         const errMsg = response.error.message || "";
         const combined = (errCode + errMsg).toLowerCase();
 
-        if (combined.includes("exist") || combined.includes("taken") || combined.includes("already")) {
+        if (
+          combined.includes("exist") ||
+          combined.includes("taken") ||
+          combined.includes("already")
+        ) {
           toast.error("This email address is already registered.");
         } else {
           toast.error(errMsg || "Registration rejected.");
@@ -92,7 +124,11 @@ function RegisterContent() {
       if (response?.data?.error) {
         const errMsg = response.data.error.message || response.data.error || "";
         const lower = errMsg.toString().toLowerCase();
-        if (lower.includes("exist") || lower.includes("taken") || lower.includes("already")) {
+        if (
+          lower.includes("exist") ||
+          lower.includes("taken") ||
+          lower.includes("already")
+        ) {
           toast.error("This email address is already registered.");
         } else {
           toast.error(errMsg || "Registration rejected.");
@@ -112,7 +148,11 @@ function RegisterContent() {
       // ✅ Layer 4: when Better Auth throws instead of returning error
       console.error("Registration error:", err);
       const msg = err?.message?.toLowerCase() || "";
-      if (msg.includes("exist") || msg.includes("taken") || msg.includes("already")) {
+      if (
+        msg.includes("exist") ||
+        msg.includes("taken") ||
+        msg.includes("already")
+      ) {
         toast.error("This email address is already registered.");
       } else {
         toast.error(err.message || "Failed to finalize credentials.");
@@ -132,7 +172,9 @@ function RegisterContent() {
       });
     } catch (err) {
       console.error("Google auth error:", err);
-      toast.error("Google sign-in failed. Please try email registration instead.");
+      toast.error(
+        "Google sign-in failed. Please try email registration instead.",
+      );
       setGoogleLoading(false);
     }
   };
@@ -203,7 +245,9 @@ function RegisterContent() {
           <div className="pt-2">
             <button
               type="submit"
-              disabled={isSubmitting || (password.length > 0 && !isPasswordValid)}
+              disabled={
+                isSubmitting || (password.length > 0 && !isPasswordValid)
+              }
               className="w-full flex justify-center py-2.5 px-4 text-sm font-bold rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? "Initializing..." : "Initialize Vault Profile"}
@@ -232,7 +276,9 @@ function RegisterContent() {
           ) : (
             <GoogleIcon />
           )}
-          <span>{googleLoading ? "Redirecting..." : "Continue with Google"}</span>
+          <span>
+            {googleLoading ? "Redirecting..." : "Continue with Google"}
+          </span>
         </button>
 
         <p className="text-center text-xs text-gray-500 dark:text-gray-400 font-light">
@@ -266,10 +312,22 @@ export default function RegisterPage() {
 function GoogleIcon() {
   return (
     <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24">
-      <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.53-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-8.82z" />
-      <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.11 0-5.74-2.11-6.68-4.96H1.21v3.15C3.18 21.88 7.31 24 12 24z" />
-      <path fill="#FBBC05" d="M5.32 14.24A7.16 7.16 0 0 1 4.93 12c0-.79.13-1.57.39-2.31V6.54H1.21A11.93 11.93 0 0 0 0 12c0 2.12.55 4.12 1.52 5.87l3.8-3.63z" />
-      <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.18 2.12 1.21 5.87l3.8 3.15c.94-2.85 3.57-4.96 6.99-4.96z" />
+      <path
+        fill="#4285F4"
+        d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.53-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-8.82z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.11 0-5.74-2.11-6.68-4.96H1.21v3.15C3.18 21.88 7.31 24 12 24z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M5.32 14.24A7.16 7.16 0 0 1 4.93 12c0-.79.13-1.57.39-2.31V6.54H1.21A11.93 11.93 0 0 0 0 12c0 2.12.55 4.12 1.52 5.87l3.8-3.63z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.18 2.12 1.21 5.87l3.8 3.15c.94-2.85 3.57-4.96 6.99-4.96z"
+      />
     </svg>
   );
 }
