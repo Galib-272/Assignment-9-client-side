@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { AppContext } from "@/context/AppContext";
 import toast from "react-hot-toast";
 
-// 🚨 FIXED: Prioritize your custom environment config variable, then default sequentially to standard fallback
 const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 export default function MyIdeasPage() {
@@ -27,7 +26,6 @@ export default function MyIdeasPage() {
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [deletingIdeaId, setDeletingIdeaId] = useState(null);
 
-  // ✅ FIXED: Sets the browser tab title dynamically to "IdeaVault | My Ideas" once the component mounts
   useEffect(() => {
     document.title = "IdeaVault | My Ideas";
   }, []);
@@ -61,7 +59,8 @@ export default function MyIdeasPage() {
       }
     });
 
-    const token = localStorage.getItem("vault-token") || localStorage.getItem("token");
+    const token =
+      localStorage.getItem("vault-token") || localStorage.getItem("token");
     const targetEmail = user.email.toLowerCase();
 
     fetch(`${baseUrl}/ideas`, {
@@ -76,9 +75,14 @@ export default function MyIdeasPage() {
       .then((data) => {
         if (active) {
           const rawData = Array.isArray(data) ? data : [];
-          
+
           const userSpecificData = rawData.filter((item) => {
-            const itemEmail = (item.email || item.userEmail || item.authorEmail || "").toLowerCase();
+            const itemEmail = (
+              item.email ||
+              item.userEmail ||
+              item.authorEmail ||
+              ""
+            ).toLowerCase();
             return itemEmail === targetEmail && itemEmail !== "";
           });
 
@@ -101,7 +105,8 @@ export default function MyIdeasPage() {
   const confirmDeleteIdea = () => {
     if (!deletingIdeaId) return;
 
-    const token = localStorage.getItem("vault-token") || localStorage.getItem("token");
+    const token =
+      localStorage.getItem("vault-token") || localStorage.getItem("token");
 
     fetch(`${baseUrl}/ideas/${deletingIdeaId}`, {
       method: "DELETE",
@@ -114,10 +119,12 @@ export default function MyIdeasPage() {
         return res.json();
       })
       .then(() => {
-        setIdeas((prev) => prev.filter((idea) => {
-          const targetId = idea._id || idea.id;
-          return targetId !== deletingIdeaId;
-        }));
+        setIdeas((prev) =>
+          prev.filter((idea) => {
+            const targetId = idea._id || idea.id;
+            return targetId !== deletingIdeaId;
+          }),
+        );
         setDeletingIdeaId(null);
         toast.error("Concept permanently deleted from ledger.");
       })
@@ -145,7 +152,8 @@ export default function MyIdeasPage() {
   const executeSaveEdit = () => {
     if (!editingIdea) return;
 
-    const token = localStorage.getItem("vault-token") || localStorage.getItem("token");
+    const token =
+      localStorage.getItem("vault-token") || localStorage.getItem("token");
     const targetId = editingIdea._id || editingIdea.id;
 
     const updatePayload = {
@@ -173,8 +181,10 @@ export default function MyIdeasPage() {
         setIdeas((prev) =>
           prev.map((idea) => {
             const currentId = idea._id || idea.id;
-            return currentId === targetId ? { ...idea, ...updatePayload } : idea;
-          })
+            return currentId === targetId
+              ? { ...idea, ...updatePayload }
+              : idea;
+          }),
         );
         setEditingIdea(null);
         setShowConfirmationModal(false);
@@ -209,7 +219,8 @@ export default function MyIdeasPage() {
               My Deposited Concepts
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400 font-light mt-2">
-              Manage and analyze the architectural records you have committed to the matrix.
+              Manage and analyze the architectural records you have committed to
+              the matrix.
             </p>
           </div>
           <Link
@@ -230,7 +241,8 @@ export default function MyIdeasPage() {
         ) : ideas.length === 0 ? (
           <div className="text-center py-24 bg-white dark:bg-[#111726]/40 border border-dashed border-gray-300 dark:border-gray-800 rounded-2xl transition-colors duration-300">
             <p className="text-sm text-gray-500 dark:text-gray-400 font-light italic mb-4">
-              You have not registered any concept parameters under this identity signature.
+              You have not registered any concept parameters under this identity
+              signature.
             </p>
             <Link
               href="/add-idea"
@@ -256,7 +268,8 @@ export default function MyIdeasPage() {
                         alt={idea.title}
                         className="w-full h-full object-cover"
                         onError={(e) => {
-                          e.target.src = "https://images.unsplash.com/photo-1579546929518-9e396f3cc809";
+                          e.target.src =
+                            "https://images.unsplash.com/photo-1579546929518-9e396f3cc809";
                         }}
                       />
                       <span className="absolute top-4 right-4 bg-white/90 dark:bg-[#0b0f19]/90 backdrop-blur-sm text-[10px] font-bold px-3 py-1 rounded-md text-indigo-600 dark:text-indigo-400 shadow-sm uppercase tracking-wider border border-gray-200 dark:border-gray-800/40">
@@ -283,7 +296,9 @@ export default function MyIdeasPage() {
                         View Analysis
                       </Link>
                     ) : (
-                      <span className="text-xs font-bold text-gray-400 dark:text-gray-500">View Unavailable</span>
+                      <span className="text-xs font-bold text-gray-400 dark:text-gray-500">
+                        View Unavailable
+                      </span>
                     )}
                     <div className="flex items-center space-x-4">
                       <button
@@ -315,7 +330,8 @@ export default function MyIdeasPage() {
                 Modify Concept Formulation
               </h2>
               <p className="text-xs text-gray-500 dark:text-gray-400 font-light mt-1">
-                Adjust your active registry parameters inline without leaving the view loop.
+                Adjust your active registry parameters inline without leaving
+                the view loop.
               </p>
             </div>
 
@@ -433,7 +449,8 @@ export default function MyIdeasPage() {
               Confirm Structural Modifications
             </h3>
             <p className="text-sm text-gray-600 dark:text-gray-400 font-light mb-6">
-              Are you sure you want to commit these architectural modifications to the database cluster records?
+              Are you sure you want to commit these architectural modifications
+              to the database cluster records?
             </p>
             <div className="flex items-center justify-center space-x-3">
               <button
@@ -462,7 +479,8 @@ export default function MyIdeasPage() {
               Confirm Purge Sequence
             </h3>
             <p className="text-sm text-gray-600 dark:text-gray-400 font-light mb-6">
-              Are you sure you want to permanently delete this concept blueprint from the repository? This action cannot be reversed.
+              Are you sure you want to permanently delete this concept blueprint
+              from the repository? This action cannot be reversed.
             </p>
             <div className="flex items-center justify-center space-x-3">
               <button

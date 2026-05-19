@@ -2,7 +2,11 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { FaLightbulb, FaShieldHalved, FaUsersViewfinder } from "react-icons/fa6";
+import {
+  FaLightbulb,
+  FaShieldHalved,
+  FaUsersViewfinder,
+} from "react-icons/fa6";
 import TrendingIdeas from "../components/TrendingIdeas";
 
 export default function Home() {
@@ -12,7 +16,6 @@ export default function Home() {
 
   return (
     <div className="w-full bg-gray-50 text-gray-900 dark:bg-[#0b0f19] dark:text-white min-h-screen transition-colors duration-300">
-      {/* Banner is kept structurally dark so white typography remains legible */}
       <Banner />
 
       <TrendingIdeas />
@@ -24,7 +27,9 @@ export default function Home() {
               The Validation Workflow
             </h2>
             <p className="mt-3 max-w-2xl mx-auto text-base text-gray-500 dark:text-gray-400 font-light">
-              Three simple, tactical checkpoints designed to transform speculative ideas into market-tested ventures without using default alerts.
+              Three simple, tactical checkpoints designed to transform
+              speculative ideas into market-tested ventures without using
+              default alerts.
             </p>
           </div>
 
@@ -37,7 +42,8 @@ export default function Home() {
                 1. Deposit Your Concept
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-400 font-light leading-relaxed">
-                Log your structural startup idea into our encrypted ecosystem repository using category parameters.
+                Log your structural startup idea into our encrypted ecosystem
+                repository using category parameters.
               </p>
             </div>
 
@@ -49,7 +55,8 @@ export default function Home() {
                 2. Gather Peer Validation
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-400 font-light leading-relaxed">
-                Receive descriptive feedback text, validation indicators, and target profile match criteria.
+                Receive descriptive feedback text, validation indicators, and
+                target profile match criteria.
               </p>
             </div>
 
@@ -61,7 +68,8 @@ export default function Home() {
                 3. Build Your Synergy
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-400 font-light leading-relaxed">
-                Connect with verified co-founders, development leads, or angels matching your specific sector filters.
+                Connect with verified co-founders, development leads, or angels
+                matching your specific sector filters.
               </p>
             </div>
           </div>
@@ -72,32 +80,49 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-white border border-gray-200 dark:bg-indigo-950/60 dark:border-gray-800/80 rounded-2xl py-12 px-6 sm:px-12 text-center text-gray-900 dark:text-white relative overflow-hidden shadow-md dark:shadow-xl transition-colors duration-300">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-indigo-500/10 dark:from-indigo-500/20 via-transparent to-transparent opacity-50" />
-            
+
             <div className="relative z-10 max-w-3xl mx-auto mb-10">
               <h2 className="text-3xl font-black tracking-tight mb-2 text-gray-900 dark:text-white">
                 Our Growing Ecosystem
               </h2>
               <p className="text-gray-500 dark:text-indigo-200 font-light text-sm md:text-base">
-                Real-time metrics tracking global sharing activity, user collaboration networks, and platform engagement scores.
+                Real-time metrics tracking global sharing activity, user
+                collaboration networks, and platform engagement scores.
               </p>
             </div>
 
             <div className="relative z-10 grid grid-cols-2 lg:grid-cols-4 gap-8">
               <div className="flex flex-col items-center">
-                <span className="text-4xl md:text-5xl font-black tracking-tight mb-1 text-indigo-600 dark:text-white">1,420+</span>
-                <span className="text-xs md:text-sm text-gray-400 dark:text-indigo-200 font-bold dark:font-light uppercase tracking-wider">Validated Concepts</span>
+                <span className="text-4xl md:text-5xl font-black tracking-tight mb-1 text-indigo-600 dark:text-white">
+                  1,420+
+                </span>
+                <span className="text-xs md:text-sm text-gray-400 dark:text-indigo-200 font-bold dark:font-light uppercase tracking-wider">
+                  Validated Concepts
+                </span>
               </div>
               <div className="flex flex-col items-center">
-                <span className="text-4xl md:text-5xl font-black tracking-tight mb-1 text-indigo-600 dark:text-white">42,000+</span>
-                <span className="text-xs md:text-sm text-gray-400 dark:text-indigo-200 font-bold dark:font-light uppercase tracking-wider">Comments Logged</span>
+                <span className="text-4xl md:text-5xl font-black tracking-tight mb-1 text-indigo-600 dark:text-white">
+                  42,000+
+                </span>
+                <span className="text-xs md:text-sm text-gray-400 dark:text-indigo-200 font-bold dark:font-light uppercase tracking-wider">
+                  Comments Logged
+                </span>
               </div>
               <div className="flex flex-col items-center">
-                <span className="text-4xl md:text-5xl font-black tracking-tight mb-1 text-indigo-600 dark:text-white">89%</span>
-                <span className="text-xs md:text-sm text-gray-400 dark:text-indigo-200 font-bold dark:font-light uppercase tracking-wider">Synergy Rate</span>
+                <span className="text-4xl md:text-5xl font-black tracking-tight mb-1 text-indigo-600 dark:text-white">
+                  89%
+                </span>
+                <span className="text-xs md:text-sm text-gray-400 dark:text-indigo-200 font-bold dark:font-light uppercase tracking-wider">
+                  Synergy Rate
+                </span>
               </div>
               <div className="flex flex-col items-center">
-                <span className="text-4xl md:text-5xl font-black tracking-tight mb-1 text-indigo-600 dark:text-white">12,000+</span>
-                <span className="text-xs md:text-sm text-gray-400 dark:text-indigo-200 font-bold dark:font-light uppercase tracking-wider">Global Innovators</span>
+                <span className="text-4xl md:text-5xl font-black tracking-tight mb-1 text-indigo-600 dark:text-white">
+                  12,000+
+                </span>
+                <span className="text-xs md:text-sm text-gray-400 dark:text-indigo-200 font-bold dark:font-light uppercase tracking-wider">
+                  Global Innovators
+                </span>
               </div>
             </div>
           </div>
@@ -111,19 +136,22 @@ function Banner() {
   const slides = [
     {
       title: "Empower Your Startup Journey",
-      description: "Securely store, refine, and co-create your disruptive business concepts in a shared space designed for true innovators.",
-      image: "/s1.png"
+      description:
+        "Securely store, refine, and co-create your disruptive business concepts in a shared space designed for true innovators.",
+      image: "/s1.png",
     },
     {
       title: "Validate Before You Build",
-      description: "Gather structural feedback and collaborate with domain experts to shape raw formulas into market-ready ventures.",
-      image: "/s2.png"
+      description:
+        "Gather structural feedback and collaborate with domain experts to shape raw formulas into market-ready ventures.",
+      image: "/s2.png",
     },
     {
       title: "Discover Next-Gen Innovations",
-      description: "Explore breaking ideas across AI, Tech, and Education. See what the ecosystem is working on and find your synergy.",
-      image: "/s3.png"
-    }
+      description:
+        "Explore breaking ideas across AI, Tech, and Education. See what the ecosystem is working on and find your synergy.",
+      image: "/s3.png",
+    },
   ];
 
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -141,7 +169,9 @@ function Banner() {
         <div
           key={index}
           className={`absolute inset-0 w-full h-full flex items-center justify-center transition-all duration-1000 ease-in-out ${
-            index === currentSlide ? "opacity-100 z-20 visible" : "opacity-0 z-10 invisible"
+            index === currentSlide
+              ? "opacity-100 z-20 visible"
+              : "opacity-0 z-10 invisible"
           }`}
         >
           <img
@@ -149,8 +179,7 @@ function Banner() {
             alt={slide.title}
             className="absolute inset-0 w-full h-full object-cover opacity-35"
           />
-          
-          {/* Kept dark overlays here so text remains crisp over banner assets */}
+
           <div className="absolute inset-0 bg-gradient-to-b from-gray-950/10 via-gray-950/60 to-gray-950" />
 
           <div className="relative max-w-4xl px-6 text-center mx-auto z-30">

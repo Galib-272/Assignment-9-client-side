@@ -10,6 +10,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [imgError, setImgError] = useState(false);
   const dropdownRef = useRef(null);
@@ -40,8 +41,13 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [pathname]);
+
   const handleNavbarDisconnect = async () => {
     setIsDropdownOpen(false);
+    setIsMobileMenuOpen(false);
     await logout();
     router.push("/");
   };
@@ -62,19 +68,64 @@ export default function Navbar() {
   const inactiveClass =
     "text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors";
 
-  // Compute initials as fallback text content
+  const mobileActiveClass =
+    "block pl-3 pr-4 py-2 border-l-4 border-indigo-600 dark:border-indigo-400 text-base font-bold text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/20";
+  const mobileInactiveClass =
+    "block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900 hover:border-gray-300 dark:hover:border-gray-700 transition-all";
+
   const userInitials = user?.name
     ? user.name.trim().slice(0, 2).toUpperCase()
     : user?.user?.name
       ? user.user.name.trim().slice(0, 2).toUpperCase()
       : "IV";
 
-  // ✅ FIXED: Better-Auth nested response parsing object model structural fix
   const avatarUrl = user?.image || user?.user?.image || null;
+
   return (
     <nav className="bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center relative">
+          <div className="flex items-center md:hidden">
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              type="button"
+              className="inline-flex items-center justify-center p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-900 focus:outline-none transition-all"
+              aria-controls="mobile-menu"
+              aria-expanded={isMobileMenuOpen}
+            >
+              <span className="sr-only">Open main menu</span>
+              {isMobileMenuOpen ? (
+                <svg
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth="1.5"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              ) : (
+                <svg
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth="1.5"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
+                  />
+                </svg>
+              )}
+            </button>
+          </div>
+
           <div className="flex items-center">
             <Link
               href="/"
@@ -197,6 +248,40 @@ export default function Navbar() {
           </div>
         </div>
       </div>
+
+      {isMobileMenuOpen && (
+        <div
+          id="mobile-menu"
+          className="md:hidden bg-white dark:bg-gray-950 border-t border-gray-100 dark:border-gray-900 py-2 space-y-1 shadow-inner"
+        >
+          {publicLinks.map((link) => (
+            <Link
+              key={link.path}
+              href={link.path}
+              className={
+                pathname === link.path ? mobileActiveClass : mobileInactiveClass
+              }
+            >
+              {link.name}
+            </Link>
+          ))}
+          {mounted &&
+            user &&
+            privateLinks.map((link) => (
+              <Link
+                key={link.path}
+                href={link.path}
+                className={
+                  pathname === link.path
+                    ? mobileActiveClass
+                    : mobileInactiveClass
+                }
+              >
+                {link.name}
+              </Link>
+            ))}
+        </div>
+      )}
     </nav>
   );
 }

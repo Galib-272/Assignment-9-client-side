@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { AppContext } from "@/context/AppContext";
 import toast from "react-hot-toast";
 
-// Prioritize environment variables, then fall back to standard local host execution cleanly
 const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 export default function IdeaDetailsPage({ params: paramsPromise }) {
@@ -34,14 +33,13 @@ export default function IdeaDetailsPage({ params: paramsPromise }) {
     const pageMountTime = Date.now();
 
     Promise.all([
-      // ✅ FIXED: Catch failure inline inside the promise map to prevent breaking execution
       fetch(`${baseUrl}/ideas/${params.id}`)
         .then((res) => {
           if (!res.ok) return { message: "Idea document not localized." };
           return res.json();
         })
         .catch(() => ({ message: "Idea document not localized." })),
-        
+
       fetch(`${baseUrl}/comments?ideaId=${params.id}`)
         .then((res) => {
           if (!res.ok) return [];

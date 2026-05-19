@@ -4,16 +4,16 @@ import { useContext, useState, useEffect } from "react";
 import { AppContext } from "@/context/AppContext";
 import Link from "next/link";
 
-// Clean evaluation fallback to prioritize local backend environments smoothly
 const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 async function fetchMyComments(email, token) {
-  // Try /my-comments first, fall back to /comments, then return []
-  // Each attempt is independent so a failure doesn't crash the chain
   try {
-    const res = await fetch(`${baseUrl}/my-comments?email=${encodeURIComponent(email)}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const res = await fetch(
+      `${baseUrl}/my-comments?email=${encodeURIComponent(email)}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
     if (res.ok) {
       const data = await res.json();
       return Array.isArray(data) ? data : [];
@@ -21,16 +21,18 @@ async function fetchMyComments(email, token) {
   } catch (_) {}
 
   try {
-    const res = await fetch(`${baseUrl}/comments?email=${encodeURIComponent(email)}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const res = await fetch(
+      `${baseUrl}/comments?email=${encodeURIComponent(email)}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
     if (res.ok) {
       const data = await res.json();
       return Array.isArray(data) ? data : [];
     }
   } catch (_) {}
 
-  // Both failed — return empty instead of throwing
   return [];
 }
 
@@ -46,28 +48,40 @@ export default function MyInteractionsPage() {
   useEffect(() => {
     if (authLoading || !user) return;
 
-    const token = localStorage.getItem("vault-token") || localStorage.getItem("token") || "";
+    const token =
+      localStorage.getItem("vault-token") ||
+      localStorage.getItem("token") ||
+      "";
 
     fetchMyComments(user.email, token)
       .then(async (comments) => {
-        // Filter to only this user's comments if the endpoint returned all
         const mine = comments.filter((c) => {
-          const commentEmail = (c.userEmail || c.email || c.authorEmail || "").toLowerCase();
+          const commentEmail = (
+            c.userEmail ||
+            c.email ||
+            c.authorEmail ||
+            ""
+          ).toLowerCase();
           return commentEmail === user.email.toLowerCase();
         });
 
         const targetComments = mine.length > 0 ? mine : comments;
 
-        // Fetch corresponding ideas concurrently to attach actual titles instead of the fallback string
         try {
-          const ideaIds = [...new Set(targetComments.map(c => c.ideaId || c.idea_id || c.id).filter(Boolean))];
-          
+          const ideaIds = [
+            ...new Set(
+              targetComments
+                .map((c) => c.ideaId || c.idea_id || c.id)
+                .filter(Boolean),
+            ),
+          ];
+
           const ideasData = await Promise.all(
-            ideaIds.map(id =>
+            ideaIds.map((id) =>
               fetch(`${baseUrl}/ideas/${id}`)
-                .then(res => res.ok ? res.json() : null)
-                .catch(() => null)
-            )
+                .then((res) => (res.ok ? res.json() : null))
+                .catch(() => null),
+            ),
           );
 
           const ideaTitleMap = ideasData.reduce((acc, idea) => {
@@ -77,16 +91,15 @@ export default function MyInteractionsPage() {
             return acc;
           }, {});
 
-          // ✅ FIXED: Map comments and filter out any whose parent ideas were deleted from the database
           const enrichedComments = targetComments
-            .map(c => {
+            .map((c) => {
               const targetId = c.ideaId || c.idea_id || c.id || "";
               return {
                 ...c,
-                ideaTitle: ideaTitleMap[targetId] || null
+                ideaTitle: ideaTitleMap[targetId] || null,
               };
             })
-            .filter(c => c.ideaTitle !== null); // Discards comments belonging to missing/deleted ideas
+            .filter((c) => c.ideaTitle !== null);
 
           setInteractions(enrichedComments);
         } catch (enrichError) {
@@ -136,7 +149,8 @@ export default function MyInteractionsPage() {
           My Concept Interactions
         </h1>
         <p className="text-sm font-light text-gray-500 dark:text-gray-400 mb-12 max-w-2xl leading-relaxed">
-          Review the peer validation comments and structural adjustment suggestions you have logged.
+          Review the peer validation comments and structural adjustment
+          suggestions you have logged.
         </p>
 
         <div className="bg-white dark:bg-[#111726] border border-gray-200 dark:border-gray-800/80 rounded-2xl p-8 shadow-md dark:shadow-xl w-full transition-colors duration-300">
@@ -147,19 +161,28 @@ export default function MyInteractionsPage() {
           {interactions.length === 0 ? (
             <div className="text-center py-12 bg-gray-50 dark:bg-[#131a2b]/30 border border-dashed border-gray-200 dark:border-gray-800/80 rounded-xl transition-colors duration-300">
               <p className="text-sm text-gray-400 font-light italic">
-                No validation notes recorded across any concept repository blocks yet.
+                No validation notes recorded across any concept repository
+                blocks yet.
               </p>
             </div>
           ) : (
             <div className="space-y-8">
               {interactions.map((comment, index) => {
-                const uniqueKey = comment._id || comment.insertedId || `interaction-row-${index}`;
-                const commentText = comment.text || comment.comment || comment.message || "";
-                const targetIdeaId = comment.ideaId || comment.idea_id || comment.id || "";
+                const uniqueKey =
+                  comment._id ||
+                  comment.insertedId ||
+                  `interaction-row-${index}`;
+                const commentText =
+                  comment.text || comment.comment || comment.message || "";
+                const targetIdeaId =
+                  comment.ideaId || comment.idea_id || comment.id || "";
                 const ideaTitle = comment.ideaTitle;
 
                 return (
-                  <div key={uniqueKey} className="border-l-2 border-indigo-500 pl-5 space-y-2">
+                  <div
+                    key={uniqueKey}
+                    className="border-l-2 border-indigo-500 pl-5 space-y-2"
+                  >
                     {targetIdeaId ? (
                       <Link
                         href={`/ideas/${targetIdeaId}`}
@@ -177,12 +200,19 @@ export default function MyInteractionsPage() {
                       &ldquo;{commentText}&rdquo;
                     </p>
 
-                    {(comment.timestampRaw || comment.timestamp || comment.date) && (
+                    {(comment.timestampRaw ||
+                      comment.timestamp ||
+                      comment.date) && (
                       <span className="block text-[10px] text-gray-400 dark:text-gray-500 font-mono pt-1">
                         Timestamp Logged:{" "}
                         {new Date(
-                          comment.timestampRaw || comment.timestamp || comment.date
-                        ).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" })}
+                          comment.timestampRaw ||
+                            comment.timestamp ||
+                            comment.date,
+                        ).toLocaleString(undefined, {
+                          dateStyle: "short",
+                          timeStyle: "short",
+                        })}
                       </span>
                     )}
                   </div>

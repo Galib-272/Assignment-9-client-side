@@ -26,8 +26,14 @@ export default function ProfilePage() {
     };
   }, []);
 
-  const currentName = name || (user ? (user.name || user.email.split("@")[0]) : "");
-  const currentImage = image || (user ? (user.image || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde") : "");
+  const currentName =
+    name || (user ? user.name || user.email.split("@")[0] : "");
+  const currentImage =
+    image ||
+    (user
+      ? user.image ||
+        "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde"
+      : "");
 
   useEffect(() => {
     if (mounted && !authLoading && !user) {
@@ -51,7 +57,7 @@ export default function ProfilePage() {
       const updatedUser = {
         ...user,
         name: finalName,
-        image: finalImage
+        image: finalImage,
       };
 
       localStorage.setItem("vault-user", JSON.stringify(updatedUser));
@@ -80,15 +86,18 @@ export default function ProfilePage() {
     <div className="bg-white dark:bg-gray-900 min-h-screen py-12 transition-colors duration-300">
       <div className="max-w-4xl mx-auto px-4 sm:px-6">
         <div className="bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-700/60 p-8 rounded-2xl shadow-sm space-y-8">
-          
           <div className="flex items-center space-x-6 p-6 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm">
             <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-indigo-500 flex-shrink-0 bg-gray-100">
               <img
-                src={user.image || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde"}
+                src={
+                  user.image ||
+                  "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde"
+                }
                 alt="Identity Matrix View"
                 className="w-full h-full object-cover"
                 onError={(e) => {
-                  e.target.src = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde";
+                  e.target.src =
+                    "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde";
                 }}
               />
             </div>
@@ -107,20 +116,35 @@ export default function ProfilePage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="bg-white dark:bg-gray-900/60 border border-gray-100 dark:border-gray-800/80 p-5 rounded-xl text-center">
-              <span className="block text-2xl font-black text-gray-900 dark:text-white">3</span>
-              <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400 mt-1 block">Deposited Concepts</span>
+              <span className="block text-2xl font-black text-gray-900 dark:text-white">
+                3
+              </span>
+              <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400 mt-1 block">
+                Deposited Concepts
+              </span>
             </div>
             <div className="bg-white dark:bg-gray-900/60 border border-gray-100 dark:border-gray-800/80 p-5 rounded-xl text-center">
-              <span className="block text-2xl font-black text-gray-900 dark:text-white">14</span>
-              <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400 mt-1 block">Peer Validations Issued</span>
+              <span className="block text-2xl font-black text-gray-900 dark:text-white">
+                14
+              </span>
+              <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400 mt-1 block">
+                Peer Validations Issued
+              </span>
             </div>
             <div className="bg-white dark:bg-gray-900/60 border border-gray-100 dark:border-gray-800/80 p-5 rounded-xl text-center">
-              <span className="block text-2xl font-black text-indigo-500 dark:text-indigo-400">A+</span>
-              <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400 mt-1 block">Ecosystem Credibility</span>
+              <span className="block text-2xl font-black text-indigo-500 dark:text-indigo-400">
+                A+
+              </span>
+              <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400 mt-1 block">
+                Ecosystem Credibility
+              </span>
             </div>
           </div>
 
-          <form onSubmit={handleUpdateIdentity} className="space-y-6 pt-4 border-t border-gray-100 dark:border-gray-800">
+          <form
+            onSubmit={handleUpdateIdentity}
+            className="space-y-6 pt-4 border-t border-gray-100 dark:border-gray-800"
+          >
             <h3 className="text-sm font-bold uppercase tracking-wider text-gray-900 dark:text-white">
               Profile Management
             </h3>
@@ -171,11 +195,12 @@ export default function ProfilePage() {
                 disabled={isSaving}
                 className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold text-xs px-6 py-3 rounded-lg transition-all shadow-sm"
               >
-                {isSaving ? "Saving Identity Changes..." : "Save Identity Changes"}
+                {isSaving
+                  ? "Saving Identity Changes..."
+                  : "Save Identity Changes"}
               </button>
             </div>
           </form>
-
         </div>
       </div>
     </div>

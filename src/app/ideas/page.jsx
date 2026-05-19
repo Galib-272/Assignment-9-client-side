@@ -4,7 +4,6 @@ import { useState, useEffect, useContext } from "react";
 import Link from "next/link";
 import { AppContext } from "@/context/AppContext";
 
-// 🚨 FIXED: Prioritize environment variable, then fallback sequentially to localhost for local testing
 const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 export default function IdeasExplorePage() {
@@ -14,22 +13,22 @@ export default function IdeasExplorePage() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
 
-  // ✅ FIXED: Sets the browser tab title dynamically to "IdeaVault | Ideas" once the component mounts
   useEffect(() => {
     document.title = "IdeaVault | Ideas";
   }, []);
 
   useEffect(() => {
-    if (authLoading) return; // wait until auth state is confirmed
+    if (authLoading) return;
 
     let active = true;
-    requestAnimationFrame(() => { if (active) setLoading(true); });
+    requestAnimationFrame(() => {
+      if (active) setLoading(true);
+    });
 
     const queryParams = new URLSearchParams();
     if (search.trim()) queryParams.append("search", search.trim());
     if (category !== "All") queryParams.append("category", category);
-    
-    /* CHANGED: Appending limit parameter to backend pipeline when tracking unauthenticated users */
+
     if (!user) {
       queryParams.append("defaultOnly", "true");
       queryParams.append("limit", "6");
@@ -51,7 +50,9 @@ export default function IdeasExplorePage() {
         if (active) setLoading(false);
       });
 
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [search, category, user, authLoading]);
 
   const categories = ["All", "Tech", "Health", "AI", "Education", "FinTech"];
@@ -59,13 +60,13 @@ export default function IdeasExplorePage() {
   return (
     <div className="bg-gray-50 dark:bg-[#0b0f19] text-gray-900 dark:text-white min-h-screen py-16 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
         <div className="mb-12">
           <h1 className="text-4xl font-black tracking-tight text-gray-900 dark:text-white sm:text-5xl">
             Explore Concept Repository
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 font-light mt-3 max-w-2xl leading-relaxed">
-            Scan and analyze startup formulas logged across the global matrix node network.
+            Scan and analyze startup formulas logged across the global matrix
+            node network.
           </p>
         </div>
 
@@ -93,7 +94,11 @@ export default function IdeasExplorePage() {
               }}
             >
               {categories.map((cat) => (
-                <option key={cat} value={cat} className="bg-white dark:bg-[#151c2c] text-gray-900 dark:text-white">
+                <option
+                  key={cat}
+                  value={cat}
+                  className="bg-white dark:bg-[#151c2c] text-gray-900 dark:text-white"
+                >
                   {cat === "All" ? "All Categories" : cat}
                 </option>
               ))}
@@ -111,7 +116,8 @@ export default function IdeasExplorePage() {
         ) : ideas.length === 0 ? (
           <div className="text-center py-24 bg-white dark:bg-[#111726]/40 border border-dashed border-gray-200 dark:border-gray-800 rounded-2xl transition-colors duration-300">
             <p className="text-sm text-gray-400 dark:text-gray-500 font-light italic">
-              No structural startup components matched your filtering parameters.
+              No structural startup components matched your filtering
+              parameters.
             </p>
           </div>
         ) : (
@@ -129,7 +135,8 @@ export default function IdeasExplorePage() {
                         alt={idea.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         onError={(e) => {
-                          e.target.src = "https://images.unsplash.com/photo-1579546929518-9e396f3cc809";
+                          e.target.src =
+                            "https://images.unsplash.com/photo-1579546929518-9e396f3cc809";
                         }}
                       />
                       <span className="absolute top-4 right-4 bg-indigo-600/90 backdrop-blur-sm text-[10px] font-bold px-3 py-1 rounded-md text-white shadow-md uppercase tracking-wider">
@@ -149,8 +156,12 @@ export default function IdeasExplorePage() {
 
                   <div className="px-6 pb-6 pt-4 border-t border-gray-100 dark:border-gray-800/60 flex items-center justify-between bg-gray-50 dark:bg-[#131a2b]/40 transition-colors duration-300">
                     <div className="flex flex-col">
-                      <span className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider font-bold">Budget</span>
-                      <span className="text-sm font-black text-gray-900 dark:text-white mt-0.5">{idea.estimatedBudget || "N/A"}</span>
+                      <span className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider font-bold">
+                        Budget
+                      </span>
+                      <span className="text-sm font-black text-gray-900 dark:text-white mt-0.5">
+                        {idea.estimatedBudget || "N/A"}
+                      </span>
                     </div>
                     <Link
                       href={`/ideas/${idea._id}`}
@@ -166,7 +177,8 @@ export default function IdeasExplorePage() {
             {!user && (
               <div className="mt-12 text-center py-10 bg-white dark:bg-[#111726]/40 border border-dashed border-gray-200 dark:border-gray-800 rounded-2xl">
                 <p className="text-sm text-gray-500 dark:text-gray-400 font-light mb-4">
-                  Showing default concepts only. Log in to explore the full repository.
+                  Showing default concepts only. Log in to explore the full
+                  repository.
                 </p>
                 <Link
                   href="/login?redirectTo=/ideas"

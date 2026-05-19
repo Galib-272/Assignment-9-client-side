@@ -43,7 +43,6 @@ function RegisterContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // ✅ FIXED ROUTING: Dynamically compute previous route history context fallbacks
   const [redirectTo, setRedirectTo] = useState("/");
 
   useEffect(() => {
@@ -56,9 +55,7 @@ function RegisterContent() {
     if (typeof window !== "undefined" && document.referrer) {
       try {
         const referrerUrl = new URL(document.referrer);
-        // Ensure we only redirect internally within our own application domain
         if (referrerUrl.origin === window.location.origin) {
-          // If the previous page was login or register, don't loop back to them
           if (
             !referrerUrl.pathname.includes("/login") &&
             !referrerUrl.pathname.includes("/register")
@@ -102,7 +99,6 @@ function RegisterContent() {
         callbackURL: redirectTo,
       });
 
-      // ✅ Layer 1: response.error object (most Better Auth versions)
       if (response?.error) {
         const errCode = response.error.code || "";
         const errMsg = response.error.message || "";
@@ -120,7 +116,6 @@ function RegisterContent() {
         return;
       }
 
-      // ✅ Layer 2: response.data.error (some nested versions)
       if (response?.data?.error) {
         const errMsg = response.data.error.message || response.data.error || "";
         const lower = errMsg.toString().toLowerCase();
@@ -136,7 +131,6 @@ function RegisterContent() {
         return;
       }
 
-      // ✅ Layer 3: no user in response — silent failure fallback
       if (!response?.data?.user && !response?.user) {
         toast.error("Registration failed. This email may already be in use.");
         return;
@@ -145,7 +139,6 @@ function RegisterContent() {
       toast.success("Identity profile committed successfully!");
       router.push(redirectTo);
     } catch (err) {
-      // ✅ Layer 4: when Better Auth throws instead of returning error
       console.error("Registration error:", err);
       const msg = err?.message?.toLowerCase() || "";
       if (

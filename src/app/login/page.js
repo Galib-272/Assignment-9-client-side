@@ -65,12 +65,11 @@ function LoginContent() {
       return;
     }
     setIsSubmitting(true);
-    
-    // ✅ ADDED TOAST LOGIC FOR EMAIL/PASSWORD LOGIN
+
     try {
       const result = await login(email, password);
       setIsSubmitting(false);
-      
+
       if (result && result.success) {
         toast.success("Welcome back! Identity authorized.");
         router.push(redirectTo);
@@ -84,7 +83,6 @@ function LoginContent() {
     }
   };
 
-  // ✅ Save intended destination, then land on /auth/callback to sync session
   const handleGoogleLogin = async () => {
     try {
       setGoogleLoading(true);

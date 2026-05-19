@@ -7,16 +7,15 @@ const db = client.db("ideaVaultDB");
 
 export const auth = betterAuth({
   database: mongodbAdapter(db),
-  
+
   advanced: {
     crossSubdomainCookie: true,
-    trustedHeaders: ["x-forwarded-host", "x-forwarded-proto"]
+    trustedHeaders: ["x-forwarded-host", "x-forwarded-proto"],
   },
 
   emailAndPassword: {
     enabled: true,
-    // ✅ FIXED: Overrides the server-side default from 8 to 6 characters
-    minPasswordLength: 6, 
+    minPasswordLength: 6,
   },
 
   socialProviders: {

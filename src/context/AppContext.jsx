@@ -10,12 +10,8 @@ export function AppProvider({ children }) {
   const [authLoading, setAuthLoading] = useState(true);
   const [theme, setTheme] = useState("light");
 
-  // 🚨 FIXED: Prioritize environment variable, then fallback sequentially to localhost
-  const baseUrl =
-    process.env.NEXT_PUBLIC_API_URL ||
-    "http://localhost:5000";
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-  // Hydrate user and theme from localStorage after mount
   useEffect(() => {
     if (typeof window !== "undefined") {
       const storedUser = localStorage.getItem("vault-user");
@@ -82,15 +78,15 @@ export function AppProvider({ children }) {
 
         localStorage.setItem("vault-user", JSON.stringify(verifiedUser));
         setUser(verifiedUser);
-        
-        // ✅ REMOVED THE DUPLICATE TOAST FROM HERE SO IT ONLY FIRES FROM THE LOGIN FORM COMPONENT
         return { success: true };
       }
 
       return { success: false, message: data.message };
     } catch (err) {
-      // Return error message back to the component form to be cleanly toasted
-      return { success: false, message: err.message || "Authentication sequence rejected." };
+      return {
+        success: false,
+        message: err.message || "Authentication sequence rejected.",
+      };
     }
   };
 
@@ -147,7 +143,16 @@ export function AppProvider({ children }) {
 
   return (
     <AppContext.Provider
-      value={{ user, setUser, authLoading, login, loginWithGoogle, logout, theme, toggleTheme }}
+      value={{
+        user,
+        setUser,
+        authLoading,
+        login,
+        loginWithGoogle,
+        logout,
+        theme,
+        toggleTheme,
+      }}
     >
       {children}
     </AppContext.Provider>
