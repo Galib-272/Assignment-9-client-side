@@ -11,7 +11,11 @@ export function AppProvider({ children }) {
       const storedUser = localStorage.getItem("vault-user");
       const storedToken = localStorage.getItem("vault-token");
       if (storedUser && storedToken) {
-        return JSON.parse(storedUser);
+        try {
+          return JSON.parse(storedUser);
+        } catch (e) {
+          return null;
+        }
       }
     }
     return null;
@@ -26,13 +30,12 @@ export function AppProvider({ children }) {
     return "light";
   });
 
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+  const baseUrl =
+    process.env.NEXT_PUBLIC_API_URL ||
+    "https://assignment-9-server-side.vercel.app" ||
+    "http://localhost:5000";
 
   useEffect(() => {
-    queueMicrotask(() => {
-      setAuthLoading(false);
-    });
-
     if (theme === "dark") {
       document.documentElement.classList.add("dark");
     } else {
@@ -44,7 +47,6 @@ export function AppProvider({ children }) {
     const nextTheme = theme === "dark" ? "light" : "dark";
     setTheme(nextTheme);
     localStorage.setItem("theme", nextTheme);
-
     if (nextTheme === "dark") {
       document.documentElement.classList.add("dark");
     } else {
@@ -56,9 +58,7 @@ export function AppProvider({ children }) {
     try {
       const response = await fetch(`${baseUrl}/jwt`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
 
@@ -69,10 +69,16 @@ export function AppProvider({ children }) {
       }
 
       if (data.token) {
-        const profileUser = { email };
         localStorage.setItem("vault-token", data.token);
-        localStorage.setItem("vault-user", JSON.stringify(profileUser));
-        setUser(profileUser);
+
+        const verifiedUser = data.user || {
+          email,
+          name: email.split("@")[0],
+          image: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde",
+        };
+
+        localStorage.setItem("vault-user", JSON.stringify(verifiedUser));
+        setUser(verifiedUser);
         toast.success("Welcome back to the Vault workspace!");
         return { success: true };
       }
@@ -80,6 +86,51 @@ export function AppProvider({ children }) {
       return { success: false };
     } catch (err) {
       toast.error(err.message || "Authentication sequence rejected.");
+      return { success: false };
+    }
+  };
+
+  const loginWithGoogle = async (email, userData = {}) => {
+    try {
+      const response = await fetch(`${baseUrl}/jwt/google`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Google authentication failed.");
+      }
+
+      if (data.token) {
+        localStorage.setItem("vault-token", data.token);
+
+        const verifiedUser = data.user || {
+          email,
+          name: userData.name || email.split("@")[0],
+          image:
+            userData.image ||
+            "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde",
+        };
+
+        // Prefer the richer data from Google over what's in the DB
+        const mergedUser = {
+          ...verifiedUser,
+          name: userData.name || verifiedUser.name,
+          image: userData.image || verifiedUser.image,
+        };
+
+        localStorage.setItem("vault-user", JSON.stringify(mergedUser));
+        setUser(mergedUser);
+        toast.success("Welcome to the Vault workspace!");
+        return { success: true };
+      }
+
+      return { success: false };
+    } catch (err) {
+      toast.error(err.message || "Google authentication failed.");
       return { success: false };
     }
   };
@@ -93,7 +144,7 @@ export function AppProvider({ children }) {
 
   return (
     <AppContext.Provider
-      value={{ user, authLoading, login, logout, theme, toggleTheme }}
+      value={{ user, setUser, authLoading, login, loginWithGoogle, logout, theme, toggleTheme }}
     >
       {children}
     </AppContext.Provider>

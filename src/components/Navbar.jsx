@@ -80,7 +80,7 @@ export default function Navbar() {
                 {link.name}
               </Link>
             ))}
-            {user &&
+            {mounted && user &&
               privateLinks.map((link) => (
                 <Link
                   key={link.path}
@@ -121,7 +121,7 @@ export default function Navbar() {
               )}
             </button>
 
-            {user ? (
+            {mounted && user ? (
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -130,9 +130,10 @@ export default function Navbar() {
                   <img
                     src={
                       user.image ||
+                      user.photoURL ||
                       "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde"
                     }
-                    alt={user.name}
+                    alt={user.name || "User Avatar"}
                     className="w-full h-full object-cover"
                   />
                 </button>
@@ -141,7 +142,7 @@ export default function Navbar() {
                   <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-lg shadow-lg py-1 z-50">
                     <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-800">
                       <p className="text-xs font-semibold text-gray-900 dark:text-white truncate">
-                        {user.name}
+                        {user.name || user.displayName || "Anonymous Expert"}
                       </p>
                       <p className="text-[10px] text-gray-400 truncate mt-0.5">
                         {user.email}
@@ -164,12 +165,14 @@ export default function Navbar() {
                 )}
               </div>
             ) : (
-              <Link
-                href={`/login?redirectTo=${pathname}`}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2 rounded-lg transition duration-200 shadow-sm"
-              >
-                Login / Register
-              </Link>
+              mounted && (
+                <Link
+                  href={`/login?redirectTo=${pathname}`}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2 rounded-lg transition duration-200 shadow-sm"
+                >
+                  Login / Register
+                </Link>
+              )
             )}
           </div>
         </div>

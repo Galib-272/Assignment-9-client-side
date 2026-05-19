@@ -1,8 +1,6 @@
 @import "tailwindcss";
 
-@custom-variant dark (&:where(.dark, .dark *));
-
-@layer base {
+@variant dark (.dark &);@layer base {
   html, body {
     @apply transition-colors duration-300;
   }

@@ -3,123 +3,123 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 
+const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://assignment-9-server-side.vercel.app" || "http://localhost:5000";
+
 export default function TrendingIdeas() {
-  const [ideas, setIdeas] = useState([]);
+  const [trendingIdeas, setTrendingIdeas] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const componentMountTime = Date.now();
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-
+    let active = true;
     fetch(`${baseUrl}/ideas`)
-      .then((res) => res.json())
-      .then((data) => {
-        const networkElapsedTime = Date.now() - componentMountTime;
-        const targetLoadingDelay = 1500;
-        const remainingDelayGate = Math.max(
-          0,
-          targetLoadingDelay - networkElapsedTime,
-        );
-
-        setTimeout(() => {
-          if (Array.isArray(data)) {
-            const publicCoreCards = data
-              .filter((item) => !item.authorEmail && !item.userEmail)
-              .slice(0, 6);
-            setIdeas(publicCoreCards);
-          }
-          setLoading(false);
-        }, remainingDelayGate);
+      .then((res) => {
+        if (!res.ok) throw new Error("Ecosystem data mapping failure.");
+        return res.json();
       })
-      .catch(() => {
-        setLoading(false);
+      .then((data) => {
+        if (active) {
+          const rawIdeas = Array.isArray(data) ? data : [];
+          setTrendingIdeas(rawIdeas.slice(0, 6));
+          setLoading(false);
+        }
+      })
+      .catch((err) => {
+        console.error("Trending ideas section fetch error:", err);
+        if (active) setLoading(false);
       });
+    return () => { active = false; };
   }, []);
 
-  if (loading) {
-    return (
-      <div className="py-24 flex flex-col items-center justify-center bg-white dark:bg-gray-900 space-y-4">
-        <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
-        <p className="text-sm text-gray-400 font-light tracking-wide animate-pulse">
-          Synchronizing with database cloud repository...
-        </p>
-      </div>
-    );
-  }
-
   return (
-    <section className="py-16 bg-white dark:bg-gray-900 transition-colors duration-300">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    // ✅ was: bg-[#0b0f19] hardcoded
+    <section className="bg-gray-50 dark:bg-[#0b0f19] transition-colors duration-300">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="mb-12 text-center">
+          {/* ✅ was: text-white hardcoded */}
           <h2 className="text-3xl font-black tracking-tight text-gray-900 dark:text-white sm:text-4xl">
             Trending Startup Ideas
           </h2>
-          <p className="max-w-2xl mx-auto text-base text-gray-500 dark:text-gray-400 font-light mt-3">
-            Explore the most validated concepts circulating through the
-            ecosystem this week.
+          {/* ✅ was: text-gray-400 hardcoded (invisible on light bg) */}
+          <p className="text-sm text-gray-500 dark:text-gray-400 font-light mt-2">
+            Explore the most validated concepts circulating through the ecosystem this week.
           </p>
         </div>
 
-        {ideas.length === 0 ? (
-          <div className="text-center py-12 border border-dashed border-gray-200 dark:border-gray-800 rounded-xl">
-            <p className="text-sm text-gray-400">
+        {loading ? (
+          <div className="min-h-[30vh] flex flex-col items-center justify-center space-y-4">
+            {/* ✅ was: border-gray-800 hardcoded */}
+            <div className="w-12 h-12 border-4 border-gray-200 dark:border-gray-800 border-t-indigo-500 rounded-full animate-spin" />
+            <p className="text-sm text-gray-400 dark:text-gray-500 font-light tracking-wide animate-pulse">
+              Querying live document collections...
+            </p>
+          </div>
+        ) : trendingIdeas.length === 0 ? (
+          // ✅ was: bg-[#111726]/40 border-gray-800 hardcoded
+          <div className="text-center py-20 bg-white dark:bg-[#111726]/40 border border-dashed border-gray-200 dark:border-gray-800 rounded-2xl max-w-4xl mx-auto transition-colors duration-300">
+            <p className="text-sm text-gray-400 dark:text-gray-500 font-light italic">
               No active concept models deployed in database clusters yet.
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {ideas.map((idea) => (
-              <div
-                key={idea._id}
-                className="flex flex-col justify-between bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/60 rounded-xl overflow-hidden transition-all duration-300 ease-out hover:shadow-xl hover:-translate-y-2 hover:border-indigo-500/30 dark:hover:border-indigo-400/30 h-full group"
-              >
-                <div className="w-full h-48 overflow-hidden relative bg-gray-200 dark:bg-gray-800">
-                  <img
-                    src={idea.image}
-                    alt={idea.title}
-                    className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
-                  />
-                </div>
+            {trendingIdeas.map((idea, index) => {
+              const itemKey = idea._id || idea.id || `trending-card-${index}`;
+              const targetRouteId = idea._id || idea.id || "";
 
-                <div className="p-6 flex-grow flex flex-col justify-between">
+              return (
+                <div
+                  key={itemKey}
+                  // ✅ was: bg-[#111726] border-gray-800/80 hardcoded
+                  className="bg-white dark:bg-[#111726] border border-gray-200 dark:border-gray-800/80 rounded-2xl overflow-hidden flex flex-col justify-between shadow-md dark:shadow-xl transition-all duration-300 hover:-translate-y-1 group"
+                >
                   <div>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 mb-3">
-                      {idea.category}
-                    </span>
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 tracking-tight transition-colors duration-300 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
-                      {idea.title}
-                    </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-300 font-light line-clamp-3 mb-4 leading-relaxed">
-                      {idea.shortDescription}
-                    </p>
-                  </div>
-
-                  <div className="border-t border-gray-200/60 dark:border-gray-700/60 pt-4 mt-auto">
-                    <div className="flex flex-col gap-1 mb-5 text-xs text-gray-500 dark:text-gray-400 font-light">
-                      <div>
-                        <span className="font-medium text-gray-700 dark:text-gray-200">
-                          Audience:{" "}
-                        </span>
-                        {idea.targetAudience}
-                      </div>
-                      <div>
-                        <span className="font-medium text-gray-700 dark:text-gray-200">
-                          Est. Budget:{" "}
-                        </span>
-                        {idea.estimatedBudget}
-                      </div>
+                    {/* ✅ was: bg-[#090d16] hardcoded */}
+                    <div className="w-full h-48 overflow-hidden relative bg-gray-100 dark:bg-[#090d16]">
+                      <img
+                        src={idea.image}
+                        alt={idea.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        onError={(e) => {
+                          e.target.src = "https://images.unsplash.com/photo-1579546929518-9e396f3cc809";
+                        }}
+                      />
+                      <span className="absolute top-4 right-4 bg-indigo-600/90 backdrop-blur-sm text-[10px] font-bold px-3 py-1 rounded-md text-white shadow-md uppercase tracking-wider">
+                        {idea.category}
+                      </span>
                     </div>
 
-                    <Link
-                      href={`/ideas/${idea._id}`}
-                      className="block text-center w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm py-2.5 px-4 rounded-md transition-all duration-200 shadow-sm"
-                    >
-                      View Details
-                    </Link>
+                    <div className="p-6">
+                      {/* ✅ was: text-white hardcoded */}
+                      <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight line-clamp-1 mb-2">
+                        {idea.title}
+                      </h2>
+                      {/* ✅ was: text-gray-400 hardcoded */}
+                      <p className="text-sm text-gray-500 dark:text-gray-400 font-light line-clamp-3 leading-relaxed">
+                        {idea.shortDescription}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* ✅ was: border-gray-800/60 bg-[#131a2b]/40 hardcoded */}
+                  <div className="px-6 pb-6 pt-4 border-t border-gray-100 dark:border-gray-800/60 flex items-center justify-between bg-gray-50/80 dark:bg-[#131a2b]/40 transition-colors duration-300">
+                    <div className="flex flex-col">
+                      {/* ✅ was: text-gray-500 hardcoded */}
+                      <span className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider font-bold">Budget</span>
+                      {/* ✅ was: text-white hardcoded */}
+                      <span className="text-sm font-black text-gray-900 dark:text-white mt-0.5">{idea.estimatedBudget || "N/A"}</span>
+                    </div>
+                    {targetRouteId && (
+                      <Link
+                        href={`/ideas/${targetRouteId}`}
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition duration-200 shadow-lg shadow-indigo-600/20"
+                      >
+                        View Analysis
+                      </Link>
+                    )}
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
