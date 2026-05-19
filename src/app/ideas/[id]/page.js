@@ -6,10 +6,8 @@ import { useRouter } from "next/navigation";
 import { AppContext } from "@/context/AppContext";
 import toast from "react-hot-toast";
 
-const baseUrl =
-  process.env.NEXT_PUBLIC_API_URL ||
-  "https://assignment-9-server-side.vercel.app" ||
-  "http://localhost:5000";
+// Prioritize environment variables, then fall back to standard local host execution cleanly
+const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 export default function IdeaDetailsPage({ params: paramsPromise }) {
   const params = use(paramsPromise);
@@ -36,14 +34,20 @@ export default function IdeaDetailsPage({ params: paramsPromise }) {
     const pageMountTime = Date.now();
 
     Promise.all([
-      fetch(`${baseUrl}/ideas/${params.id}`).then((res) => {
-        if (!res.ok) throw new Error("Idea document not localized.");
-        return res.json();
-      }),
-      fetch(`${baseUrl}/comments?ideaId=${params.id}`).then((res) => {
-        if (!res.ok) return [];
-        return res.json();
-      }),
+      // ✅ FIXED: Catch failure inline inside the promise map to prevent breaking execution
+      fetch(`${baseUrl}/ideas/${params.id}`)
+        .then((res) => {
+          if (!res.ok) return { message: "Idea document not localized." };
+          return res.json();
+        })
+        .catch(() => ({ message: "Idea document not localized." })),
+        
+      fetch(`${baseUrl}/comments?ideaId=${params.id}`)
+        .then((res) => {
+          if (!res.ok) return [];
+          return res.json();
+        })
+        .catch(() => []),
     ])
       .then(([ideaData, commentsData]) => {
         const networkElapsedTime = Date.now() - pageMountTime;
@@ -326,7 +330,7 @@ export default function IdeaDetailsPage({ params: paramsPromise }) {
                     key={uniqueKey}
                     className="flex gap-4 p-4 rounded-xl bg-gray-50/50 dark:bg-gray-800/20 border border-gray-100/70 dark:border-gray-800/50"
                   >
-                    <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-gray-200 dark:bg-gray-700 border border-gray-200 dark:border-gray-700">
+                    <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-gray-200 dark:bg-gray-700 border border-gray-200 dark:bg-gray-700">
                       <img
                         src={
                           comment.authorImage ||

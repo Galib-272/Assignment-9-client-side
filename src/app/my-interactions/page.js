@@ -4,10 +4,11 @@ import { useContext, useState, useEffect } from "react";
 import { AppContext } from "@/context/AppContext";
 import Link from "next/link";
 
-const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://assignment-9-server-side.vercel.app" || "http://localhost:5000";
+// Clean evaluation fallback to prioritize local backend environments smoothly
+const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 async function fetchMyComments(email, token) {
-  // ✅ Try /my-comments first, fall back to /comments, then return []
+  // Try /my-comments first, fall back to /comments, then return []
   // Each attempt is independent so a failure doesn't crash the chain
   try {
     const res = await fetch(`${baseUrl}/my-comments?email=${encodeURIComponent(email)}`, {
@@ -45,15 +46,53 @@ export default function MyInteractionsPage() {
   useEffect(() => {
     if (authLoading || !user) return;
 
-    const token = localStorage.getItem("vault-token") || "";
+    const token = localStorage.getItem("vault-token") || localStorage.getItem("token") || "";
 
     fetchMyComments(user.email, token)
-      .then((comments) => {
-        // ✅ Filter to only this user's comments if the endpoint returned all
-        const mine = comments.filter((c) =>
-          [c.userEmail, c.email, c.authorEmail].includes(user.email)
-        );
-        setInteractions(mine.length > 0 ? mine : comments);
+      .then(async (comments) => {
+        // Filter to only this user's comments if the endpoint returned all
+        const mine = comments.filter((c) => {
+          const commentEmail = (c.userEmail || c.email || c.authorEmail || "").toLowerCase();
+          return commentEmail === user.email.toLowerCase();
+        });
+
+        const targetComments = mine.length > 0 ? mine : comments;
+
+        // Fetch corresponding ideas concurrently to attach actual titles instead of the fallback string
+        try {
+          const ideaIds = [...new Set(targetComments.map(c => c.ideaId || c.idea_id || c.id).filter(Boolean))];
+          
+          const ideasData = await Promise.all(
+            ideaIds.map(id =>
+              fetch(`${baseUrl}/ideas/${id}`)
+                .then(res => res.ok ? res.json() : null)
+                .catch(() => null)
+            )
+          );
+
+          const ideaTitleMap = ideasData.reduce((acc, idea) => {
+            if (idea && idea._id && !idea.message) {
+              acc[idea._id] = idea.title;
+            }
+            return acc;
+          }, {});
+
+          // ✅ FIXED: Map comments and filter out any whose parent ideas were deleted from the database
+          const enrichedComments = targetComments
+            .map(c => {
+              const targetId = c.ideaId || c.idea_id || c.id || "";
+              return {
+                ...c,
+                ideaTitle: ideaTitleMap[targetId] || null
+              };
+            })
+            .filter(c => c.ideaTitle !== null); // Discards comments belonging to missing/deleted ideas
+
+          setInteractions(enrichedComments);
+        } catch (enrichError) {
+          console.error("Failed to map idea titles:", enrichError);
+          setInteractions(targetComments);
+        }
       })
       .catch((err) => {
         console.error("Interaction fetch error:", err);
@@ -117,10 +156,7 @@ export default function MyInteractionsPage() {
                 const uniqueKey = comment._id || comment.insertedId || `interaction-row-${index}`;
                 const commentText = comment.text || comment.comment || comment.message || "";
                 const targetIdeaId = comment.ideaId || comment.idea_id || comment.id || "";
-                const ideaTitle =
-                  comment.ideaTitle ||
-                  comment.title ||
-                  `Concept Analysis Map: ${targetIdeaId.substring(0, 8)}`;
+                const ideaTitle = comment.ideaTitle;
 
                 return (
                   <div key={uniqueKey} className="border-l-2 border-indigo-500 pl-5 space-y-2">

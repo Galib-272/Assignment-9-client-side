@@ -11,6 +11,7 @@ export default function Navbar() {
   const router = useRouter();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [imgError, setImgError] = useState(false);
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -24,6 +25,10 @@ export default function Navbar() {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    setImgError(false);
+  }, [user]);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -57,6 +62,15 @@ export default function Navbar() {
   const inactiveClass =
     "text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors";
 
+  // Compute initials as fallback text content
+  const userInitials = user?.name
+    ? user.name.trim().slice(0, 2).toUpperCase()
+    : user?.user?.name
+      ? user.user.name.trim().slice(0, 2).toUpperCase()
+      : "IV";
+
+  // ✅ FIXED: Better-Auth nested response parsing object model structural fix
+  const avatarUrl = user?.image || user?.user?.image || null;
   return (
     <nav className="bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -80,7 +94,8 @@ export default function Navbar() {
                 {link.name}
               </Link>
             ))}
-            {mounted && user &&
+            {mounted &&
+              user &&
               privateLinks.map((link) => (
                 <Link
                   key={link.path}
@@ -125,27 +140,32 @@ export default function Navbar() {
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="w-9 h-9 rounded-full overflow-hidden border border-gray-200 dark:border-gray-800 focus:outline-none shadow-sm transition-all"
+                  className="w-9 h-9 rounded-full overflow-hidden border border-gray-200 dark:border-gray-800 bg-indigo-600 flex items-center justify-center text-white text-xs font-black shadow-sm transition-all"
                 >
-                  <img
-                    src={
-                      user.image ||
-                      user.photoURL ||
-                      "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde"
-                    }
-                    alt={user.name || "User Avatar"}
-                    className="w-full h-full object-cover"
-                  />
+                  {avatarUrl && !imgError ? (
+                    <img
+                      src={avatarUrl}
+                      alt={user.name || user?.user?.name || "User Avatar"}
+                      className="w-full h-full object-cover"
+                      referrerPolicy="no-referrer"
+                      onError={() => setImgError(true)}
+                    />
+                  ) : (
+                    <span>{userInitials}</span>
+                  )}
                 </button>
 
                 {isDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-lg shadow-lg py-1 z-50">
                     <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-800">
                       <p className="text-xs font-semibold text-gray-900 dark:text-white truncate">
-                        {user.name || user.displayName || "Anonymous Expert"}
+                        {user.name ||
+                          user?.user?.name ||
+                          user.displayName ||
+                          "Anonymous Expert"}
                       </p>
                       <p className="text-[10px] text-gray-400 truncate mt-0.5">
-                        {user.email}
+                        {user.email || user?.user?.email}
                       </p>
                     </div>
                     <Link

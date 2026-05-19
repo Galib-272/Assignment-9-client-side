@@ -67,20 +67,61 @@ function RegisterContent() {
     setIsSubmitting(true);
     try {
       const response = await authClient.signUp.email({
-        email, password, name, image,
+        email: email.trim().toLowerCase(),
+        password: password,
+        name: name.trim(),
+        image: image.trim(),
         callbackURL: redirectTo,
       });
-      if (response?.error) throw new Error(response.error.message || "Registration rejected.");
+
+      // ✅ Layer 1: response.error object (most Better Auth versions)
+      if (response?.error) {
+        const errCode = response.error.code || "";
+        const errMsg = response.error.message || "";
+        const combined = (errCode + errMsg).toLowerCase();
+
+        if (combined.includes("exist") || combined.includes("taken") || combined.includes("already")) {
+          toast.error("This email address is already registered.");
+        } else {
+          toast.error(errMsg || "Registration rejected.");
+        }
+        return;
+      }
+
+      // ✅ Layer 2: response.data.error (some nested versions)
+      if (response?.data?.error) {
+        const errMsg = response.data.error.message || response.data.error || "";
+        const lower = errMsg.toString().toLowerCase();
+        if (lower.includes("exist") || lower.includes("taken") || lower.includes("already")) {
+          toast.error("This email address is already registered.");
+        } else {
+          toast.error(errMsg || "Registration rejected.");
+        }
+        return;
+      }
+
+      // ✅ Layer 3: no user in response — silent failure fallback
+      if (!response?.data?.user && !response?.user) {
+        toast.error("Registration failed. This email may already be in use.");
+        return;
+      }
+
       toast.success("Identity profile committed successfully!");
       router.push(redirectTo);
     } catch (err) {
-      toast.error(err.message || "Failed to finalize credentials.");
+      // ✅ Layer 4: when Better Auth throws instead of returning error
+      console.error("Registration error:", err);
+      const msg = err?.message?.toLowerCase() || "";
+      if (msg.includes("exist") || msg.includes("taken") || msg.includes("already")) {
+        toast.error("This email address is already registered.");
+      } else {
+        toast.error(err.message || "Failed to finalize credentials.");
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // ✅ Save intended destination, then land on /auth/callback to sync session
   const handleGoogleLogin = async () => {
     try {
       setGoogleLoading(true);
@@ -107,7 +148,8 @@ function RegisterContent() {
           <div>
             <label className={labelClass}>Full Name</label>
             <input
-              type="text" required
+              type="text"
+              required
               value={name}
               onChange={(e) => setName(e.target.value)}
               className={inputClass}
@@ -117,7 +159,8 @@ function RegisterContent() {
           <div>
             <label className={labelClass}>Email Address</label>
             <input
-              type="email" required
+              type="email"
+              required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className={inputClass}
@@ -127,7 +170,8 @@ function RegisterContent() {
           <div>
             <label className={labelClass}>Profile Image URL</label>
             <input
-              type="url" required
+              type="url"
+              required
               value={image}
               onChange={(e) => setImage(e.target.value)}
               className={inputClass}

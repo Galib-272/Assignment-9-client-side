@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 
-const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://assignment-9-server-side.vercel.app" || "http://localhost:5000";
+// 🚨 FIXED: Prioritize environment variable, then fallback sequentially to localhost for development
+const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 export default function TrendingIdeas() {
   const [trendingIdeas, setTrendingIdeas] = useState([]);

@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { AppContext } from "@/context/AppContext";
 import toast from "react-hot-toast";
 
-const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://assignment-9-server-side.vercel.app" || "http://localhost:5000";
+// 🚨 FIXED: Clean fallback logic prioritizing environment variables, then falling back to localhost accurately
+const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 // Reusable input classes to avoid repetition
 const inputClass = `w-full px-4 py-3 text-sm rounded-xl border 

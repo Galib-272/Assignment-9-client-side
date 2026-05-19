@@ -3,8 +3,9 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import "./globals.css";
 
+// ✅ FIXED: Configured metadata properties to resolve the default app tab to "IdeaVault | Home"
 export const metadata = {
-  title: "IdeaVault",
+  title: "IdeaVault | Home",
   description: "Secure Concept Ledgers",
 };
 

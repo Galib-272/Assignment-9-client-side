@@ -6,34 +6,37 @@ import toast from "react-hot-toast";
 export const AppContext = createContext();
 
 export function AppProvider({ children }) {
-  const [user, setUser] = useState(() => {
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [theme, setTheme] = useState("light");
+
+  // 🚨 FIXED: Prioritize environment variable, then fallback sequentially to localhost
+  const baseUrl =
+    process.env.NEXT_PUBLIC_API_URL ||
+    "http://localhost:5000";
+
+  // Hydrate user and theme from localStorage after mount
+  useEffect(() => {
     if (typeof window !== "undefined") {
       const storedUser = localStorage.getItem("vault-user");
       const storedToken = localStorage.getItem("vault-token");
       if (storedUser && storedToken) {
         try {
-          return JSON.parse(storedUser);
+          setUser(JSON.parse(storedUser));
         } catch (e) {
-          return null;
+          setUser(null);
         }
       }
+      const storedTheme = localStorage.getItem("theme") || "light";
+      setTheme(storedTheme);
+      if (storedTheme === "dark") {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
     }
-    return null;
-  });
-
-  const [authLoading, setAuthLoading] = useState(false);
-
-  const [theme, setTheme] = useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("theme") || "light";
-    }
-    return "light";
-  });
-
-  const baseUrl =
-    process.env.NEXT_PUBLIC_API_URL ||
-    "https://assignment-9-server-side.vercel.app" ||
-    "http://localhost:5000";
+    setAuthLoading(false);
+  }, []);
 
   useEffect(() => {
     if (theme === "dark") {
@@ -115,7 +118,6 @@ export function AppProvider({ children }) {
             "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde",
         };
 
-        // Prefer the richer data from Google over what's in the DB
         const mergedUser = {
           ...verifiedUser,
           name: userData.name || verifiedUser.name,

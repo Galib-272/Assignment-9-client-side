@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import { AppContext } from "@/context/AppContext";
 import toast from "react-hot-toast";
 
-const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://assignment-9-server-side.vercel.app" || "http://localhost:5000";
+// 🚨 FIXED: Prioritize your custom environment config variable, then default sequentially to standard fallback
+const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 export default function MyIdeasPage() {
   const { user, authLoading } = useContext(AppContext);
@@ -25,6 +26,11 @@ export default function MyIdeasPage() {
 
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [deletingIdeaId, setDeletingIdeaId] = useState(null);
+
+  // ✅ FIXED: Sets the browser tab title dynamically to "IdeaVault | My Ideas" once the component mounts
+  useEffect(() => {
+    document.title = "IdeaVault | My Ideas";
+  }, []);
 
   useEffect(() => {
     let active = true;
