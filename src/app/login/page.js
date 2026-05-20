@@ -44,7 +44,7 @@ function LoginContent() {
   const { login } = useContext(AppContext);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirectTo") || "/my-ideas";
+  const redirectTo = searchParams.get("redirectTo") || "/";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -192,7 +192,7 @@ function LoginContent() {
         <p className="text-center text-xs text-gray-500 dark:text-gray-400 font-light">
           New to the workspace?{" "}
           <Link
-            href="/register"
+            href={`/register?redirectTo=${encodeURIComponent(redirectTo)}`}
             className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
           >
             Register authorization profile

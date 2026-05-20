@@ -137,7 +137,7 @@ function RegisterContent() {
       }
 
       toast.success("Identity profile committed successfully!");
-      router.push(redirectTo);
+      router.push(`/login?redirectTo=${encodeURIComponent(redirectTo)}`);
     } catch (err) {
       console.error("Registration error:", err);
       const msg = err?.message?.toLowerCase() || "";
@@ -277,7 +277,7 @@ function RegisterContent() {
         <p className="text-center text-xs text-gray-500 dark:text-gray-400 font-light">
           Already registered?{" "}
           <Link
-            href="/login"
+            href={`/login?redirectTo=${encodeURIComponent(redirectTo)}`}
             className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
           >
             Access vault profile
